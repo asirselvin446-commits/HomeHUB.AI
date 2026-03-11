@@ -4,6 +4,10 @@ import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import 'tasks_screen.dart';
+import 'finance_screen.dart';
+import 'grocery_screen.dart';
+import 'maintenance_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -170,12 +174,14 @@ class DashboardScreen extends StatelessWidget {
                         icon: Icons.task_alt_rounded,
                         color: AppTheme.primaryDark,
                         subtitle: '${state.householdTasks.where((t) => t.isOverdue).length} overdue',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TasksScreen())),
                       ),
                       StatCard(
                         title: 'This Month',
                         value: currencyFormat.format(state.thisMonthExpenseTotal),
                         icon: Icons.account_balance_wallet_rounded,
                         color: AppTheme.accentTeal,
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => FinanceScreen())),
                       ),
                       StatCard(
                         title: 'Groceries Needed',
@@ -183,6 +189,7 @@ class DashboardScreen extends StatelessWidget {
                         icon: Icons.shopping_cart_rounded,
                         color: AppTheme.accentOrange,
                         subtitle: '${state.lowPantryItems.length} pantry items low',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroceryScreen())),
                       ),
                       StatCard(
                         title: 'Maintenance',
@@ -190,6 +197,7 @@ class DashboardScreen extends StatelessWidget {
                         icon: Icons.build_rounded,
                         color: AppTheme.accentYellow,
                         subtitle: 'overdue tasks',
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => MaintenanceScreen())),
                       ),
                     ],
                   ),
