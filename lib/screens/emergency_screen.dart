@@ -73,7 +73,7 @@ class EmergencyScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showContactDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: contacts.isEmpty
@@ -265,6 +265,22 @@ class EmergencyScreen extends StatelessWidget {
                                     ),
                                     SizedBox(width: 8),
                                     GestureDetector(
+                                      onTap: () => _showContactDialog(context, contact: contact),
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: (isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary)
+                                              .withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(Icons.edit_rounded,
+                                            color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                                            size: 18),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    GestureDetector(
                                       onTap: () =>
                                           state.deleteEmergencyContact(
                                               contact.id),
@@ -391,10 +407,10 @@ class EmergencyScreen extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    String category = 'Hospital';
+  void _showContactDialog(BuildContext context, {EmergencyContact? contact}) {
+    final nameCtrl = TextEditingController(text: contact?.name ?? '');
+    final phoneCtrl = TextEditingController(text: contact?.phone ?? '');
+    String category = contact?.category ?? 'Hospital';
 
     showModalBottomSheet(
       context: context,
@@ -424,7 +440,7 @@ class EmergencyScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 16),
-              Text('Add Emergency Contact',
+              Text(contact == null ? 'Add Emergency Contact' : 'Edit Contact',
                   style:
                       TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
@@ -465,14 +481,17 @@ class EmergencyScreen extends StatelessWidget {
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty &&
                         phoneCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addEmergencyContact(
-                            EmergencyContact(
-                              id: '',
-                              name: nameCtrl.text,
-                              phone: phoneCtrl.text,
-                              category: category,
-                            ),
-                          );
+                      final newContact = EmergencyContact(
+                        id: contact?.id ?? '',
+                        name: nameCtrl.text,
+                        phone: phoneCtrl.text,
+                        category: category,
+                      );
+                      if (contact == null) {
+                        context.read<AppState>().addEmergencyContact(newContact);
+                      } else {
+                        context.read<AppState>().updateEmergencyContact(newContact);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -482,7 +501,7 @@ class EmergencyScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Contact',
+                  child: Text(contact == null ? 'Add Contact' : 'Save Changes',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),

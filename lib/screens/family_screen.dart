@@ -16,7 +16,7 @@ class FamilyScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text('Family Members')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showMemberDialog(context),
         child: Icon(Icons.person_add_rounded),
       ),
       body: state.familyMembers.isEmpty
@@ -136,22 +136,32 @@ class FamilyScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (member.role != 'Admin')
-            IconButton(
-              icon: Icon(Icons.remove_circle_outline_rounded,
-                  color: AppTheme.accentOrange, size: 20),
-              onPressed: () => state.deleteFamilyMember(member.id),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: Icon(Icons.edit_rounded,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary, size: 20),
+                onPressed: () => _showMemberDialog(context, member: member),
+              ),
+              if (member.role != 'Admin')
+                IconButton(
+                  icon: Icon(Icons.remove_circle_outline_rounded,
+                      color: AppTheme.accentOrange, size: 20),
+                  onPressed: () => state.deleteFamilyMember(member.id),
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final emailCtrl = TextEditingController();
-    String role = 'Member';
-    String avatar = '👤';
+  void _showMemberDialog(BuildContext context, {FamilyMember? member}) {
+    final nameCtrl = TextEditingController(text: member?.name ?? '');
+    final emailCtrl = TextEditingController(text: member?.email ?? '');
+    String role = member?.role ?? 'Member';
+    String avatar = member?.avatar ?? '👤';
 
     showModalBottomSheet(
       context: context,
@@ -172,7 +182,7 @@ class FamilyScreen extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Family Member',
+              Text(member == null ? 'Add Family Member' : 'Edit Family Member',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               // Avatar selection
@@ -214,13 +224,18 @@ class FamilyScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addFamilyMember(FamilyMember(
-                            id: '',
-                            name: nameCtrl.text,
-                            email: emailCtrl.text,
-                            role: role,
-                            avatar: avatar,
-                          ));
+                      final newMember = FamilyMember(
+                        id: member?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
+                        name: nameCtrl.text,
+                        email: emailCtrl.text,
+                        role: role,
+                        avatar: avatar,
+                      );
+                      if (member == null) {
+                        context.read<AppState>().addFamilyMember(newMember);
+                      } else {
+                        context.read<AppState>().updateFamilyMember(newMember);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -229,7 +244,7 @@ class FamilyScreen extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Member', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(member == null ? 'Add Member' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

@@ -426,6 +426,11 @@ class AppState extends ChangeNotifier {
     await _firebase.saveHouseholdTask(_householdId!, task);
   }
 
+  Future<void> updateHouseholdTask(HouseholdTask task) async {
+    if (_householdId == null) return;
+    await _firebase.saveHouseholdTask(_householdId!, task);
+  }
+
   Future<void> toggleHouseholdTask(String id) async {
     if (_householdId == null) return;
     final idx = _householdTasks.indexWhere((t) => t.id == id);
@@ -447,6 +452,11 @@ class AppState extends ChangeNotifier {
   // ============ GROCERY ITEMS ============
 
   Future<void> addGroceryItem(GroceryItem item) async {
+    if (_householdId == null) return;
+    await _firebase.saveGroceryItem(_householdId!, item);
+  }
+
+  Future<void> updateGroceryItem(GroceryItem item) async {
     if (_householdId == null) return;
     await _firebase.saveGroceryItem(_householdId!, item);
   }
@@ -484,6 +494,11 @@ class AppState extends ChangeNotifier {
   // ============ PANTRY ITEMS ============
 
   Future<void> addPantryItem(PantryItem item) async {
+    if (_householdId == null) return;
+    await _firebase.savePantryItem(_householdId!, item);
+  }
+
+  Future<void> updatePantryItem(PantryItem item) async {
     if (_householdId == null) return;
     await _firebase.savePantryItem(_householdId!, item);
   }
@@ -533,6 +548,11 @@ class AppState extends ChangeNotifier {
     await _firebase.saveExpense(_householdId!, expense);
   }
 
+  Future<void> updateExpense(Expense expense) async {
+    if (_householdId == null) return;
+    await _firebase.saveExpense(_householdId!, expense);
+  }
+
   Future<void> deleteExpense(String id) async {
     if (_householdId == null) return;
     await _firebase.deleteDocument(
@@ -545,6 +565,11 @@ class AppState extends ChangeNotifier {
   // ============ DEBTS ============
 
   Future<void> addDebt(Debt debt) async {
+    if (_householdId == null) return;
+    await _firebase.saveDebt(_householdId!, debt);
+  }
+
+  Future<void> updateDebt(Debt debt) async {
     if (_householdId == null) return;
     await _firebase.saveDebt(_householdId!, debt);
   }
@@ -574,6 +599,11 @@ class AppState extends ChangeNotifier {
     await _firebase.saveSavingsGoal(_householdId!, goal);
   }
 
+  Future<void> updateSavingsGoal(SavingsGoal goal) async {
+    if (_householdId == null) return;
+    await _firebase.saveSavingsGoal(_householdId!, goal);
+  }
+
   Future<void> updateSavingsAmount(String id, double amount) async {
     if (_householdId == null) return;
     final idx = _savingsGoals.indexWhere((g) => g.id == id);
@@ -595,6 +625,11 @@ class AppState extends ChangeNotifier {
   // ============ UTILITY BILLS ============
 
   Future<void> addUtilityBill(UtilityBill bill) async {
+    if (_householdId == null) return;
+    await _firebase.saveUtilityBill(_householdId!, bill);
+  }
+
+  Future<void> updateUtilityBill(UtilityBill bill) async {
     if (_householdId == null) return;
     await _firebase.saveUtilityBill(_householdId!, bill);
   }
@@ -626,6 +661,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateFamilyMember(FamilyMember member) async {
+    final idx = _familyMembers.indexWhere((m) => m.id == member.id);
+    if (idx != -1) {
+      _familyMembers[idx] = member;
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteFamilyMember(String id) async {
     _familyMembers.removeWhere((m) => m.id == id);
     notifyListeners();
@@ -634,6 +677,11 @@ class AppState extends ChangeNotifier {
   // ============ EMERGENCY CONTACTS ============
 
   Future<void> addEmergencyContact(EmergencyContact contact) async {
+    if (_householdId == null) return;
+    await _firebase.saveEmergencyContact(_householdId!, contact);
+  }
+
+  Future<void> updateEmergencyContact(EmergencyContact contact) async {
     if (_householdId == null) return;
     await _firebase.saveEmergencyContact(_householdId!, contact);
   }

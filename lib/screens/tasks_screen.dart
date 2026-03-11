@@ -28,7 +28,7 @@ class _TasksScreenState extends State<TasksScreen> {
     return Scaffold(
       appBar: AppBar(title: Text('Tasks')),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showTaskDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: Column(
@@ -235,18 +235,23 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                 ),
               ),
+            IconButton(
+              icon: Icon(Icons.edit_rounded, size: 20),
+              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              onPressed: () => _showTaskDialog(context, task: task),
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final titleCtrl = TextEditingController();
-    String category = 'Cleaning';
-    String priority = 'medium';
-    DateTime? dueDate;
-    String? assignedTo;
+  void _showTaskDialog(BuildContext context, {HouseholdTask? task}) {
+    final titleCtrl = TextEditingController(text: task?.title ?? '');
+    String category = task?.category ?? 'Cleaning';
+    String priority = task?.priority ?? 'medium';
+    DateTime? dueDate = task?.dueDate;
+    String? assignedTo = task?.assignedTo;
     final members = context.read<AppState>().familyMembers;
 
     showModalBottomSheet(
@@ -276,7 +281,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 ),
               ),
               SizedBox(height: 16),
-              Text('Add Task',
+              Text(task == null ? 'Add Task' : 'Edit Task',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               TextField(
@@ -370,14 +375,21 @@ class _TasksScreenState extends State<TasksScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     if (titleCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addHouseholdTask(HouseholdTask(
-                            id: '',
-                            title: titleCtrl.text,
-                            category: category,
-                            priority: priority,
-                            dueDate: dueDate,
-                            assignedTo: assignedTo,
-                          ));
+                      final newTask = HouseholdTask(
+                        id: task?.id ?? '',
+                        title: titleCtrl.text,
+                        category: category,
+                        priority: priority,
+                        dueDate: dueDate,
+                        assignedTo: assignedTo,
+                        isCompleted: task?.isCompleted ?? false,
+                        createdAt: task?.createdAt,
+                      );
+                      if (task == null) {
+                        context.read<AppState>().addHouseholdTask(newTask);
+                      } else {
+                        context.read<AppState>().updateHouseholdTask(newTask);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -387,7 +399,7 @@ class _TasksScreenState extends State<TasksScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Task',
+                  child: Text(task == null ? 'Add Task' : 'Save Changes',
                       style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),

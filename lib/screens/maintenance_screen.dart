@@ -27,7 +27,7 @@ class MaintenanceScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showMaintenanceDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: tasks.isEmpty
@@ -160,6 +160,14 @@ class MaintenanceScreen extends StatelessWidget {
                     ]),
                   ),
                   PopupMenuItem(
+                    value: 'edit',
+                    child: Row(children: [
+                      Icon(Icons.edit_rounded, color: AppTheme.accentYellow, size: 18),
+                      SizedBox(width: 8),
+                      Text('Edit'),
+                    ]),
+                  ),
+                  PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
                       Icon(Icons.delete, color: AppTheme.accentOrange, size: 18),
@@ -170,6 +178,7 @@ class MaintenanceScreen extends StatelessWidget {
                 ],
                 onSelected: (val) {
                   if (val == 'complete') state.completeMaintenanceTask(task.id);
+                  if (val == 'edit') _showMaintenanceDialog(context, task: task);
                   if (val == 'delete') state.deleteMaintenanceTask(task.id);
                 },
               ),
@@ -312,10 +321,10 @@ class MaintenanceScreen extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    String category = 'HVAC';
-    final daysCtrl = TextEditingController(text: '90');
+  void _showMaintenanceDialog(BuildContext context, {MaintenanceTask? task}) {
+    final nameCtrl = TextEditingController(text: task?.name ?? '');
+    String category = task?.category ?? 'HVAC';
+    final daysCtrl = TextEditingController(text: task?.recurringDays.toString() ?? '90');
 
     showModalBottomSheet(
       context: context,
@@ -345,7 +354,7 @@ class MaintenanceScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 16),
-              Text('Add Maintenance Task',
+              Text(task == null ? 'Add Maintenance Task' : 'Edit Maintenance Task',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               TextField(
@@ -374,14 +383,22 @@ class MaintenanceScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addMaintenanceTask(MaintenanceTask(
-                            id: '',
-                            name: nameCtrl.text,
-                            category: category,
-                            recurringDays: int.tryParse(daysCtrl.text) ?? 90,
-                            nextDue: DateTime.now().add(
-                                Duration(days: int.tryParse(daysCtrl.text) ?? 90)),
-                          ));
+                      final newTask = MaintenanceTask(
+                        id: task?.id ?? '',
+                        name: nameCtrl.text,
+                        category: category,
+                        recurringDays: int.tryParse(daysCtrl.text) ?? 90,
+                        nextDue: task?.nextDue ?? DateTime.now().add(
+                            Duration(days: int.tryParse(daysCtrl.text) ?? 90)),
+                        lastServiced: task?.lastServiced,
+                        history: task?.history ?? [],
+                        description: task?.description ?? '',
+                      );
+                      if (task == null) {
+                        context.read<AppState>().addMaintenanceTask(newTask);
+                      } else {
+                        context.read<AppState>().updateMaintenanceTask(newTask);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -391,7 +408,7 @@ class MaintenanceScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Task', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(task == null ? 'Add Task' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

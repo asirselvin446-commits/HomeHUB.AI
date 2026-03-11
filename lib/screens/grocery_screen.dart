@@ -81,7 +81,7 @@ class _GroceryListTab extends StatelessWidget {
           SizedBox(height: 8),
           FloatingActionButton(
             heroTag: 'addGrocery',
-            onPressed: () => _showAddDialog(context),
+            onPressed: () => _showGroceryDialog(context),
             child: Icon(Icons.add_rounded),
           ),
         ],
@@ -219,16 +219,21 @@ class _GroceryListTab extends StatelessWidget {
                 ),
               ),
             ],
+            IconButton(
+              icon: Icon(Icons.edit_rounded, size: 20),
+              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              onPressed: () => _showGroceryDialog(context, item: item),
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final qtyCtrl = TextEditingController(text: '1');
-    String unit = 'pcs';
+  void _showGroceryDialog(BuildContext context, {GroceryItem? item}) {
+    final nameCtrl = TextEditingController(text: item?.name ?? '');
+    final qtyCtrl = TextEditingController(text: item?.quantity.toString() ?? '1');
+    String unit = item?.unit ?? 'pcs';
 
     showModalBottomSheet(
       context: context,
@@ -249,7 +254,7 @@ class _GroceryListTab extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Grocery Item',
+              Text(item == null ? 'Add Grocery Item' : 'Edit Grocery Item',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               TextField(
@@ -285,12 +290,20 @@ class _GroceryListTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addGroceryItem(GroceryItem(
-                            id: '',
-                            name: nameCtrl.text,
-                            quantity: int.tryParse(qtyCtrl.text) ?? 1,
-                            unit: unit,
-                          ));
+                      final newItem = GroceryItem(
+                        id: item?.id ?? '',
+                        name: nameCtrl.text,
+                        quantity: int.tryParse(qtyCtrl.text) ?? 1,
+                        unit: unit,
+                        isPurchased: item?.isPurchased ?? false,
+                        addedBy: item?.addedBy ?? 'User',
+                        category: item?.category ?? 'General',
+                      );
+                      if (item == null) {
+                        context.read<AppState>().addGroceryItem(newItem);
+                      } else {
+                        context.read<AppState>().updateGroceryItem(newItem);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -299,7 +312,7 @@ class _GroceryListTab extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Item', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(item == null ? 'Add Item' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -320,7 +333,7 @@ class _PantryTab extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addPantry',
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showPantryDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: items.isEmpty
@@ -443,6 +456,11 @@ class _PantryTab extends StatelessWidget {
             ),
           ),
           SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.edit_rounded, size: 20),
+            color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+            onPressed: () => _showPantryDialog(context, item: item),
+          ),
           // Quick quantity adjustment
           Row(
             mainAxisSize: MainAxisSize.min,
@@ -480,11 +498,11 @@ class _PantryTab extends StatelessWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final currentCtrl = TextEditingController(text: '1');
-    final minCtrl = TextEditingController(text: '0.5');
-    String unit = 'kg';
+  void _showPantryDialog(BuildContext context, {PantryItem? item}) {
+    final nameCtrl = TextEditingController(text: item?.name ?? '');
+    final currentCtrl = TextEditingController(text: item?.currentQuantity.toString() ?? '1');
+    final minCtrl = TextEditingController(text: item?.minimumQuantity.toString() ?? '0.5');
+    String unit = item?.unit ?? 'kg';
 
     showModalBottomSheet(
       context: context,
@@ -505,7 +523,7 @@ class _PantryTab extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Pantry Item',
+              Text(item == null ? 'Add Pantry Item' : 'Edit Pantry Item',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               TextField(
@@ -550,15 +568,19 @@ class _PantryTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addPantryItem(PantryItem(
-                            id: '',
-                            name: nameCtrl.text,
-                            currentQuantity:
-                                double.tryParse(currentCtrl.text) ?? 1,
-                            minimumQuantity:
-                                double.tryParse(minCtrl.text) ?? 0.5,
-                            unit: unit,
-                          ));
+                      final newItem = PantryItem(
+                        id: item?.id ?? '',
+                        name: nameCtrl.text,
+                        currentQuantity: double.tryParse(currentCtrl.text) ?? 1,
+                        minimumQuantity: double.tryParse(minCtrl.text) ?? 0.5,
+                        unit: unit,
+                        category: item?.category ?? 'General',
+                      );
+                      if (item == null) {
+                        context.read<AppState>().addPantryItem(newItem);
+                      } else {
+                        context.read<AppState>().updatePantryItem(newItem);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -567,7 +589,7 @@ class _PantryTab extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Item', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(item == null ? 'Add Item' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

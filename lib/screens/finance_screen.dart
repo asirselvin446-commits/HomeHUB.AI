@@ -87,7 +87,7 @@ class _ExpensesTab extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addExpense',
-        onPressed: () => _showAddExpense(context),
+        onPressed: () => _showExpenseDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: ListView(
@@ -291,15 +291,26 @@ class _ExpensesTab extends StatelessWidget {
                         ],
                       ),
                     ),
-                    Text(
-                      '-${currencyFormat.format(e.amount)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.accentOrange,
+                      Text(
+                        '-${currencyFormat.format(e.amount)}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.accentOrange,
+                        ),
                       ),
-                    ),
-                  ],
+                      IconButton(
+                        icon: Icon(Icons.edit_rounded, size: 18),
+                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                        onPressed: () => _showExpenseDialog(context, expense: e),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline_rounded, size: 18),
+                        color: AppTheme.accentOrange,
+                        onPressed: () => state.deleteExpense(e.id),
+                      ),
+                    ],
+                  ),
                 ),
               )),
           SizedBox(height: 80),
@@ -363,10 +374,10 @@ class _ExpensesTab extends StatelessWidget {
     }
   }
 
-  void _showAddExpense(BuildContext context) {
-    final titleCtrl = TextEditingController();
-    final amountCtrl = TextEditingController();
-    String category = 'Groceries';
+  void _showExpenseDialog(BuildContext context, {Expense? expense}) {
+    final titleCtrl = TextEditingController(text: expense?.title ?? '');
+    final amountCtrl = TextEditingController(text: expense?.amount.toString() ?? '');
+    String category = expense?.category ?? 'Groceries';
 
     showModalBottomSheet(
       context: context,
@@ -387,7 +398,7 @@ class _ExpensesTab extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Expense',
+              Text(expense == null ? 'Add Expense' : 'Edit Expense',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               TextField(
@@ -431,13 +442,18 @@ class _ExpensesTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (titleCtrl.text.isNotEmpty && amountCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addExpense(Expense(
-                            id: '',
-                            title: titleCtrl.text,
-                            amount: double.tryParse(amountCtrl.text) ?? 0,
-                            category: category,
-                            date: DateTime.now(),
-                          ));
+                      final newExpense = Expense(
+                        id: expense?.id ?? '',
+                        title: titleCtrl.text,
+                        amount: double.tryParse(amountCtrl.text) ?? 0,
+                        category: category,
+                        date: expense?.date ?? DateTime.now(),
+                      );
+                      if (expense == null) {
+                        context.read<AppState>().addExpense(newExpense);
+                      } else {
+                        context.read<AppState>().updateExpense(newExpense);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -446,7 +462,7 @@ class _ExpensesTab extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Expense', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(expense == null ? 'Add Expense' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -470,7 +486,7 @@ class _DebtsTab extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addDebt',
-        onPressed: () => _showAddDebt(context),
+        onPressed: () => _showDebtDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: state.debts.isEmpty
@@ -532,10 +548,20 @@ class _DebtsTab extends StatelessWidget {
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
                 ),
               ),
-              IconButton(
-                icon: Icon(Icons.delete_outline_rounded,
-                    color: AppTheme.accentOrange, size: 20),
-                onPressed: () => state.deleteDebt(debt.id),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit_rounded,
+                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary, size: 20),
+                    onPressed: () => _showDebtDialog(context, debt: debt),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline_rounded,
+                        color: AppTheme.accentOrange, size: 20),
+                    onPressed: () => state.deleteDebt(debt.id),
+                  ),
+                ]
               ),
             ],
           ),
@@ -659,11 +685,11 @@ class _DebtsTab extends StatelessWidget {
     );
   }
 
-  void _showAddDebt(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final totalCtrl = TextEditingController();
-    final monthlyCtrl = TextEditingController();
-    final rateCtrl = TextEditingController();
+  void _showDebtDialog(BuildContext context, {Debt? debt}) {
+    final nameCtrl = TextEditingController(text: debt?.name ?? '');
+    final totalCtrl = TextEditingController(text: debt?.totalAmount.toString() ?? '');
+    final monthlyCtrl = TextEditingController(text: debt?.monthlyPayment.toString() ?? '');
+    final rateCtrl = TextEditingController(text: debt?.interestRate.toString() ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -683,7 +709,7 @@ class _DebtsTab extends StatelessWidget {
           children: [
             Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
             SizedBox(height: 16),
-            Text('Add Debt',
+            Text(debt == null ? 'Add Debt' : 'Edit Debt',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             SizedBox(height: 16),
             TextField(controller: nameCtrl, decoration: InputDecoration(hintText: 'Debt name (e.g. Home Loan)')),
@@ -702,13 +728,19 @@ class _DebtsTab extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   if (nameCtrl.text.isNotEmpty) {
-                    context.read<AppState>().addDebt(Debt(
-                          id: '',
-                          name: nameCtrl.text,
-                          totalAmount: double.tryParse(totalCtrl.text) ?? 0,
-                          monthlyPayment: double.tryParse(monthlyCtrl.text) ?? 0,
-                          interestRate: double.tryParse(rateCtrl.text) ?? 0,
-                        ));
+                    final newDebt = Debt(
+                      id: debt?.id ?? '',
+                      name: nameCtrl.text,
+                      totalAmount: double.tryParse(totalCtrl.text) ?? 0,
+                      paidAmount: debt?.paidAmount ?? 0,
+                      monthlyPayment: double.tryParse(monthlyCtrl.text) ?? 0,
+                      interestRate: double.tryParse(rateCtrl.text) ?? 0,
+                    );
+                    if (debt == null) {
+                      context.read<AppState>().addDebt(newDebt);
+                    } else {
+                      context.read<AppState>().updateDebt(newDebt);
+                    }
                     Navigator.pop(ctx);
                   }
                 },
@@ -717,7 +749,7 @@ class _DebtsTab extends StatelessWidget {
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: Text('Add Debt', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(debt == null ? 'Add Debt' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
@@ -740,7 +772,7 @@ class _SavingsTab extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addSavings',
-        onPressed: () => _showAddGoal(context),
+        onPressed: () => _showSavingsDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: state.savingsGoals.isEmpty
@@ -847,6 +879,11 @@ class _SavingsTab extends StatelessWidget {
               ),
               SizedBox(width: 8),
               IconButton(
+                icon: Icon(Icons.edit_rounded,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary, size: 20),
+                onPressed: () => _showSavingsDialog(context, goal: goal),
+              ),
+              IconButton(
                 icon: Icon(Icons.delete_outline_rounded,
                     color: AppTheme.accentOrange, size: 20),
                 onPressed: () => state.deleteSavingsGoal(goal.id),
@@ -891,11 +928,11 @@ class _SavingsTab extends StatelessWidget {
     );
   }
 
-  void _showAddGoal(BuildContext context) {
-    final nameCtrl = TextEditingController();
-    final targetCtrl = TextEditingController();
-    final monthlyCtrl = TextEditingController();
-    String icon = '🎯';
+  void _showSavingsDialog(BuildContext context, {SavingsGoal? goal}) {
+    final nameCtrl = TextEditingController(text: goal?.name ?? '');
+    final targetCtrl = TextEditingController(text: goal?.targetAmount.toString() ?? '');
+    final monthlyCtrl = TextEditingController(text: goal?.monthlyContribution.toString() ?? '');
+    String icon = goal?.icon ?? '🎯';
 
     showModalBottomSheet(
       context: context,
@@ -916,7 +953,7 @@ class _SavingsTab extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Savings Goal',
+              Text(goal == null ? 'Add Savings Goal' : 'Edit Savings Goal',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               // Icon selector
@@ -953,13 +990,19 @@ class _SavingsTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addSavingsGoal(SavingsGoal(
-                            id: '',
-                            name: nameCtrl.text,
-                            targetAmount: double.tryParse(targetCtrl.text) ?? 0,
-                            monthlyContribution: double.tryParse(monthlyCtrl.text) ?? 0,
-                            icon: icon,
-                          ));
+                      final newGoal = SavingsGoal(
+                        id: goal?.id ?? '',
+                        name: nameCtrl.text,
+                        targetAmount: double.tryParse(targetCtrl.text) ?? 0,
+                        currentAmount: goal?.currentAmount ?? 0,
+                        monthlyContribution: double.tryParse(monthlyCtrl.text) ?? 0,
+                        icon: icon,
+                      );
+                      if (goal == null) {
+                        context.read<AppState>().addSavingsGoal(newGoal);
+                      } else {
+                        context.read<AppState>().updateSavingsGoal(newGoal);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -968,7 +1011,7 @@ class _SavingsTab extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Create Goal', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(goal == null ? 'Create Goal' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
@@ -993,7 +1036,7 @@ class _BillsTab extends StatelessWidget {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         heroTag: 'addBill',
-        onPressed: () => _showAddBill(context),
+        onPressed: () => _showBillDialog(context),
         child: Icon(Icons.add_rounded),
       ),
       body: bills.isEmpty
@@ -1106,6 +1149,21 @@ class _BillsTab extends StatelessWidget {
                               : null,
                         ),
                       ),
+                      IconButton(
+                        icon: Icon(Icons.edit_rounded, size: 20),
+                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                        onPressed: () => _showBillDialog(context, bill: bill),
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                      ),
+                      SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(Icons.delete_outline_rounded, size: 20),
+                        color: AppTheme.accentOrange,
+                        onPressed: () => state.deleteUtilityBill(bill.id),
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(),
+                      ),
                     ],
                   ),
                 );
@@ -1114,10 +1172,10 @@ class _BillsTab extends StatelessWidget {
     );
   }
 
-  void _showAddBill(BuildContext context) {
-    final amountCtrl = TextEditingController();
-    String type = 'Electricity';
-    DateTime dueDate = DateTime.now().add(Duration(days: 15));
+  void _showBillDialog(BuildContext context, {UtilityBill? bill}) {
+    final amountCtrl = TextEditingController(text: bill?.amount.toString() ?? '');
+    String type = bill?.type ?? 'Electricity';
+    DateTime dueDate = bill?.dueDate ?? DateTime.now().add(Duration(days: 15));
 
     showModalBottomSheet(
       context: context,
@@ -1138,7 +1196,7 @@ class _BillsTab extends StatelessWidget {
             children: [
               Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
-              Text('Add Utility Bill',
+              Text(bill == null ? 'Add Utility Bill' : 'Edit Utility Bill',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
               Row(children: [
@@ -1191,13 +1249,19 @@ class _BillsTab extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (amountCtrl.text.isNotEmpty) {
-                      context.read<AppState>().addUtilityBill(UtilityBill(
-                            id: '',
-                            type: type,
-                            amount: double.tryParse(amountCtrl.text) ?? 0,
-                            billDate: DateTime.now(),
-                            dueDate: dueDate,
-                          ));
+                      final newBill = UtilityBill(
+                        id: bill?.id ?? '',
+                        type: type,
+                        amount: double.tryParse(amountCtrl.text) ?? 0,
+                        billDate: bill?.billDate ?? DateTime.now(),
+                        dueDate: dueDate,
+                        isPaid: bill?.isPaid ?? false,
+                      );
+                      if (bill == null) {
+                        context.read<AppState>().addUtilityBill(newBill);
+                      } else {
+                        context.read<AppState>().updateUtilityBill(newBill);
+                      }
                       Navigator.pop(ctx);
                     }
                   },
@@ -1206,7 +1270,7 @@ class _BillsTab extends StatelessWidget {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Add Bill', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(bill == null ? 'Add Bill' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],
