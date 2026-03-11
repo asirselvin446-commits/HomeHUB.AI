@@ -43,8 +43,9 @@ class _FinanceScreenState extends State<FinanceScreen>
           isScrollable: true,
           indicatorColor: AppTheme.primaryDark,
           labelColor: AppTheme.primaryDark,
-          unselectedLabelColor:
-              isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+          unselectedLabelColor: isDark
+              ? AppTheme.darkTextSecondary
+              : AppTheme.lightTextSecondary,
           tabAlignment: TabAlignment.start,
           tabs: [
             Tab(text: '💰 Expenses'),
@@ -77,8 +78,7 @@ class _ExpensesTab extends StatelessWidget {
     final state = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final analysis = state.financialAnalysis;
-    final expenses = state.expenses
-      ..sort((a, b) => b.date.compareTo(a.date));
+    final expenses = state.expenses..sort((a, b) => b.date.compareTo(a.date));
 
     final categoryBreakdown =
         analysis['categoryBreakdown'] as Map<String, double>;
@@ -99,8 +99,10 @@ class _ExpensesTab extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('This Month',
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                Text(
+                  'This Month',
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
                 SizedBox(height: 4),
                 Text(
                   currencyFormat.format(analysis['thisMonthTotal']),
@@ -114,8 +116,7 @@ class _ExpensesTab extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -139,11 +140,14 @@ class _ExpensesTab extends StatelessWidget {
 
           // Category Breakdown Chart
           if (categoryBreakdown.isNotEmpty) ...[
-            Text('Category Breakdown',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? AppTheme.darkText : AppTheme.lightText)),
+            Text(
+              'Category Breakdown',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              ),
+            ),
             SizedBox(height: 12),
             Container(
               height: 200,
@@ -165,7 +169,9 @@ class _ExpensesTab extends StatelessWidget {
             Wrap(
               spacing: 12,
               runSpacing: 4,
-              children: categoryBreakdown.entries.toList().asMap().entries.map((e) {
+              children: categoryBreakdown.entries.toList().asMap().entries.map((
+                e,
+              ) {
                 final colors = [
                   AppTheme.primaryDark,
                   AppTheme.accentTeal,
@@ -188,8 +194,12 @@ class _ExpensesTab extends StatelessWidget {
                     SizedBox(width: 4),
                     Text(
                       '${e.value.key}: ${currencyFormat.format(e.value.value)}',
-                      style: TextStyle(fontSize: 11,
-                          color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary,
+                      ),
                     ),
                   ],
                 );
@@ -210,31 +220,47 @@ class _ExpensesTab extends StatelessWidget {
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppTheme.primaryDark.withOpacity(0.2)),
+                border: Border.all(
+                  color: AppTheme.primaryDark.withOpacity(0.2),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.auto_awesome, size: 16, color: AppTheme.primaryDark),
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 16,
+                        color: AppTheme.primaryDark,
+                      ),
                       SizedBox(width: 6),
-                      Text('AI Financial Advisor',
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryDark)),
+                      Text(
+                        'AI Financial Advisor',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.primaryDark,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 8),
-                  ...suggestions.map((s) => Padding(
-                        padding: EdgeInsets.symmetric(vertical: 3),
-                        child: Text(s,
-                            style: TextStyle(
-                                fontSize: 12,
-                                height: 1.4,
-                                color: isDark ? AppTheme.darkText : AppTheme.lightText)),
-                      )),
+                  ...suggestions.map(
+                    (s) => Padding(
+                      padding: EdgeInsets.symmetric(vertical: 3),
+                      child: Text(
+                        s,
+                        style: TextStyle(
+                          fontSize: 12,
+                          height: 1.4,
+                          color: isDark
+                              ? AppTheme.darkText
+                              : AppTheme.lightText,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -242,55 +268,69 @@ class _ExpensesTab extends StatelessWidget {
           ],
 
           // Recent Expenses
-          Text('Recent Expenses',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText)),
+          Text(
+            'Recent Expenses',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+            ),
+          ),
           SizedBox(height: 8),
-          ...expenses.take(15).map((e) => Container(
-                margin: EdgeInsets.only(bottom: 8),
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _getCategoryColor(e.category).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
+          ...expenses
+              .take(15)
+              .map(
+                (e) => Container(
+                  margin: EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: _getCategoryColor(
+                            e.category,
+                          ).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          _getCategoryIcon(e.category),
+                          color: _getCategoryColor(e.category),
+                          size: 18,
+                        ),
                       ),
-                      child: Icon(
-                        _getCategoryIcon(e.category),
-                        color: _getCategoryColor(e.category),
-                        size: 18,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(e.title,
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              e.title,
                               style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? AppTheme.darkText : AppTheme.lightText)),
-                          Text(
-                            '${e.category} • ${DateFormat('MMM dd').format(e.date)}',
-                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppTheme.darkText
+                                    : AppTheme.lightText,
+                              ),
+                            ),
+                            Text(
+                              '${e.category} • ${DateFormat('MMM dd').format(e.date)}',
+                              style: TextStyle(
                                 fontSize: 11,
                                 color: isDark
                                     ? AppTheme.darkTextSecondary
-                                    : AppTheme.lightTextSecondary),
-                          ),
-                        ],
+                                    : AppTheme.lightTextSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                       Text(
                         '-${currencyFormat.format(e.amount)}',
                         style: TextStyle(
@@ -301,8 +341,11 @@ class _ExpensesTab extends StatelessWidget {
                       ),
                       IconButton(
                         icon: Icon(Icons.edit_rounded, size: 18),
-                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-                        onPressed: () => _showExpenseDialog(context, expense: e),
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary,
+                        onPressed: () =>
+                            _showExpenseDialog(context, expense: e),
                       ),
                       IconButton(
                         icon: Icon(Icons.delete_outline_rounded, size: 18),
@@ -312,7 +355,8 @@ class _ExpensesTab extends StatelessWidget {
                     ],
                   ),
                 ),
-              )),
+              )
+              .toList(),
           SizedBox(height: 80),
         ],
       ),
@@ -339,7 +383,10 @@ class _ExpensesTab extends StatelessWidget {
         radius: 30,
         title: '${(e.value / total * 100).toInt()}%',
         titleStyle: TextStyle(
-            fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white),
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
       );
     }).toList();
   }
@@ -376,7 +423,9 @@ class _ExpensesTab extends StatelessWidget {
 
   void _showExpenseDialog(BuildContext context, {Expense? expense}) {
     final titleCtrl = TextEditingController(text: expense?.title ?? '');
-    final amountCtrl = TextEditingController(text: expense?.amount.toString() ?? '');
+    final amountCtrl = TextEditingController(
+      text: expense?.amount.toString() ?? '',
+    );
     String category = expense?.category ?? 'Groceries';
 
     showModalBottomSheet(
@@ -391,15 +440,30 @@ class _ExpensesTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Padding(
           padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               SizedBox(height: 16),
-              Text(expense == null ? 'Add Expense' : 'Edit Expense',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(
+                expense == null ? 'Add Expense' : 'Edit Expense',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
               SizedBox(height: 16),
               TextField(
                 controller: titleCtrl,
@@ -419,17 +483,23 @@ class _ExpensesTab extends StatelessWidget {
                   Expanded(
                     child: DropdownButtonFormField<String>(
                       value: category,
-                      items: [
-                        'Groceries',
-                        'Utilities',
-                        'Food',
-                        'Maintenance',
-                        'Transport',
-                        'Health',
-                        'Education',
-                        'Entertainment',
-                        'Other'
-                      ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                      items:
+                          [
+                                'Groceries',
+                                'Utilities',
+                                'Food',
+                                'Maintenance',
+                                'Transport',
+                                'Health',
+                                'Education',
+                                'Entertainment',
+                                'Other',
+                              ]
+                              .map(
+                                (c) =>
+                                    DropdownMenuItem(value: c, child: Text(c)),
+                              )
+                              .toList(),
                       onChanged: (v) => setState(() => category = v!),
                     ),
                   ),
@@ -441,7 +511,8 @@ class _ExpensesTab extends StatelessWidget {
                 height: 50,
                 child: ElevatedButton(
                   onPressed: () {
-                    if (titleCtrl.text.isNotEmpty && amountCtrl.text.isNotEmpty) {
+                    if (titleCtrl.text.isNotEmpty &&
+                        amountCtrl.text.isNotEmpty) {
                       final newExpense = Expense(
                         id: expense?.id ?? '',
                         title: titleCtrl.text,
@@ -460,9 +531,14 @@ class _ExpensesTab extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryDark,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text(expense == null ? 'Add Expense' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    expense == null ? 'Add Expense' : 'Save Changes',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],
@@ -504,8 +580,10 @@ class _DebtsTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Debt Remaining',
-                          style: TextStyle(color: Colors.white70, fontSize: 13)),
+                      Text(
+                        'Total Debt Remaining',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
                       SizedBox(height: 4),
                       Text(
                         currencyFormat.format(state.totalDebtRemaining),
@@ -519,14 +597,20 @@ class _DebtsTab extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 20),
-                ...state.debts.map((debt) => _debtCard(context, debt, isDark, state)),
+                ...state.debts.map(
+                  (debt) => _debtCard(context, debt, isDark, state),
+                ),
               ],
             ),
     );
   }
 
   Widget _debtCard(
-      BuildContext context, Debt debt, bool isDark, AppState state) {
+    BuildContext context,
+    Debt debt,
+    bool isDark,
+    AppState state,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
@@ -552,16 +636,24 @@ class _DebtsTab extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.edit_rounded,
-                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary, size: 20),
+                    icon: Icon(
+                      Icons.edit_rounded,
+                      color: isDark
+                          ? AppTheme.darkTextSecondary
+                          : AppTheme.lightTextSecondary,
+                      size: 20,
+                    ),
                     onPressed: () => _showDebtDialog(context, debt: debt),
                   ),
                   IconButton(
-                    icon: Icon(Icons.delete_outline_rounded,
-                        color: AppTheme.accentOrange, size: 20),
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      color: AppTheme.accentOrange,
+                      size: 20,
+                    ),
                     onPressed: () => state.deleteDebt(debt.id),
                   ),
-                ]
+                ],
               ),
             ],
           ),
@@ -583,29 +675,38 @@ class _DebtsTab extends StatelessWidget {
               Text(
                 'Paid: ${currencyFormat.format(debt.paidAmount)}',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.accentTeal,
-                    fontWeight: FontWeight.w600),
+                  fontSize: 12,
+                  color: AppTheme.accentTeal,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Text(
                 'Total: ${currencyFormat.format(debt.totalAmount)}',
                 style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary),
+                  fontSize: 12,
+                  color: isDark
+                      ? AppTheme.darkTextSecondary
+                      : AppTheme.lightTextSecondary,
+                ),
               ),
             ],
           ),
           SizedBox(height: 12),
           Row(
             children: [
-              _debtStat('Remaining', currencyFormat.format(debt.remainingAmount), isDark),
-              SizedBox(width: 16),
-              _debtStat('Monthly', currencyFormat.format(debt.monthlyPayment), isDark),
+              _debtStat(
+                'Remaining',
+                currencyFormat.format(debt.remainingAmount),
+                isDark,
+              ),
               SizedBox(width: 16),
               _debtStat(
-                  'Months Left', '${debt.monthsToPayoff}', isDark),
+                'Monthly',
+                currencyFormat.format(debt.monthlyPayment),
+                isDark,
+              ),
+              SizedBox(width: 16),
+              _debtStat('Months Left', '${debt.monthsToPayoff}', isDark),
             ],
           ),
           SizedBox(height: 12),
@@ -617,11 +718,16 @@ class _DebtsTab extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: AppTheme.accentTeal),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: Text('Make Payment',
-                  style: TextStyle(
-                      color: AppTheme.accentTeal, fontWeight: FontWeight.w600)),
+              child: Text(
+                'Make Payment',
+                style: TextStyle(
+                  color: AppTheme.accentTeal,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
         ],
@@ -634,17 +740,23 @@ class _DebtsTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(
-                  fontSize: 10,
-                  color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.lightTextSecondary)),
-          Text(value,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              color: isDark
+                  ? AppTheme.darkTextSecondary
+                  : AppTheme.lightTextSecondary,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+            ),
+          ),
         ],
       ),
     );
@@ -687,9 +799,15 @@ class _DebtsTab extends StatelessWidget {
 
   void _showDebtDialog(BuildContext context, {Debt? debt}) {
     final nameCtrl = TextEditingController(text: debt?.name ?? '');
-    final totalCtrl = TextEditingController(text: debt?.totalAmount.toString() ?? '');
-    final monthlyCtrl = TextEditingController(text: debt?.monthlyPayment.toString() ?? '');
-    final rateCtrl = TextEditingController(text: debt?.interestRate.toString() ?? '');
+    final totalCtrl = TextEditingController(
+      text: debt?.totalAmount.toString() ?? '',
+    );
+    final monthlyCtrl = TextEditingController(
+      text: debt?.monthlyPayment.toString() ?? '',
+    );
+    final rateCtrl = TextEditingController(
+      text: debt?.interestRate.toString() ?? '',
+    );
 
     showModalBottomSheet(
       context: context,
@@ -702,25 +820,63 @@ class _DebtsTab extends StatelessWidget {
       ),
       builder: (ctx) => Padding(
         padding: EdgeInsets.fromLTRB(
-            20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+          20,
+          20,
+          20,
+          MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             SizedBox(height: 16),
-            Text(debt == null ? 'Add Debt' : 'Edit Debt',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(
+              debt == null ? 'Add Debt' : 'Edit Debt',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
             SizedBox(height: 16),
-            TextField(controller: nameCtrl, decoration: InputDecoration(hintText: 'Debt name (e.g. Home Loan)')),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                hintText: 'Debt name (e.g. Home Loan)',
+              ),
+            ),
             SizedBox(height: 12),
-            Row(children: [
-              Expanded(child: TextField(controller: totalCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Total amount'))),
-              SizedBox(width: 12),
-              Expanded(child: TextField(controller: monthlyCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Monthly EMI'))),
-            ]),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: totalCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(hintText: 'Total amount'),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: TextField(
+                    controller: monthlyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(hintText: 'Monthly EMI'),
+                  ),
+                ),
+              ],
+            ),
             SizedBox(height: 12),
-            TextField(controller: rateCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Interest rate (%)')),
+            TextField(
+              controller: rateCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(hintText: 'Interest rate (%)'),
+            ),
             SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -747,9 +903,14 @@ class _DebtsTab extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryDark,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: Text(debt == null ? 'Add Debt' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(
+                  debt == null ? 'Add Debt' : 'Save Changes',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -791,7 +952,11 @@ class _SavingsTab extends StatelessWidget {
   }
 
   Widget _goalCard(
-      BuildContext context, SavingsGoal goal, bool isDark, AppState state) {
+    BuildContext context,
+    SavingsGoal goal,
+    bool isDark,
+    AppState state,
+  ) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
@@ -810,18 +975,23 @@ class _SavingsTab extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(goal.name,
-                        style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: isDark ? AppTheme.darkText : AppTheme.lightText)),
                     Text(
-                        '${currencyFormat.format(goal.currentAmount)} of ${currencyFormat.format(goal.targetAmount)}',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? AppTheme.darkTextSecondary
-                                : AppTheme.lightTextSecondary)),
+                      goal.name,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                      ),
+                    ),
+                    Text(
+                      '${currencyFormat.format(goal.currentAmount)} of ${currencyFormat.format(goal.targetAmount)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -852,10 +1022,11 @@ class _SavingsTab extends StatelessWidget {
                 Text(
                   '${currencyFormat.format(goal.monthlyContribution)}/month • ~${goal.monthsToGoal} months remaining',
                   style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.lightTextSecondary),
+                    fontSize: 12,
+                    color: isDark
+                        ? AppTheme.darkTextSecondary
+                        : AppTheme.lightTextSecondary,
+                  ),
                 ),
             ],
           ),
@@ -868,24 +1039,36 @@ class _SavingsTab extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: AppTheme.accentTeal),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                  child: Text('Add Savings',
-                      style: TextStyle(
-                          color: AppTheme.accentTeal,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600)),
+                  child: Text(
+                    'Add Savings',
+                    style: TextStyle(
+                      color: AppTheme.accentTeal,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(width: 8),
               IconButton(
-                icon: Icon(Icons.edit_rounded,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary, size: 20),
+                icon: Icon(
+                  Icons.edit_rounded,
+                  color: isDark
+                      ? AppTheme.darkTextSecondary
+                      : AppTheme.lightTextSecondary,
+                  size: 20,
+                ),
                 onPressed: () => _showSavingsDialog(context, goal: goal),
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline_rounded,
-                    color: AppTheme.accentOrange, size: 20),
+                icon: Icon(
+                  Icons.delete_outline_rounded,
+                  color: AppTheme.accentOrange,
+                  size: 20,
+                ),
                 onPressed: () => state.deleteSavingsGoal(goal.id),
               ),
             ],
@@ -896,7 +1079,10 @@ class _SavingsTab extends StatelessWidget {
   }
 
   void _showAddContribution(
-      BuildContext context, SavingsGoal goal, AppState state) {
+    BuildContext context,
+    SavingsGoal goal,
+    AppState state,
+  ) {
     final amountCtrl = TextEditingController();
     showDialog(
       context: context,
@@ -908,7 +1094,10 @@ class _SavingsTab extends StatelessWidget {
           decoration: InputDecoration(hintText: 'Amount (₹)'),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel'),
+          ),
           ElevatedButton(
             onPressed: () {
               final amt = double.tryParse(amountCtrl.text) ?? 0;
@@ -930,8 +1119,12 @@ class _SavingsTab extends StatelessWidget {
 
   void _showSavingsDialog(BuildContext context, {SavingsGoal? goal}) {
     final nameCtrl = TextEditingController(text: goal?.name ?? '');
-    final targetCtrl = TextEditingController(text: goal?.targetAmount.toString() ?? '');
-    final monthlyCtrl = TextEditingController(text: goal?.monthlyContribution.toString() ?? '');
+    final targetCtrl = TextEditingController(
+      text: goal?.targetAmount.toString() ?? '',
+    );
+    final monthlyCtrl = TextEditingController(
+      text: goal?.monthlyContribution.toString() ?? '',
+    );
     String icon = goal?.icon ?? '🎯';
 
     showModalBottomSheet(
@@ -946,43 +1139,79 @@ class _SavingsTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Padding(
           padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
               SizedBox(height: 16),
-              Text(goal == null ? 'Add Savings Goal' : 'Edit Savings Goal',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(
+                goal == null ? 'Add Savings Goal' : 'Edit Savings Goal',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
               SizedBox(height: 16),
               // Icon selector
               Wrap(
                 spacing: 8,
                 children: ['🎯', '🛡️', '✈️', '🏠', '🚗', '📱', '🎓', '💍']
-                    .map((e) => GestureDetector(
-                          onTap: () => setState(() => icon = e),
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: icon == e
-                                  ? AppTheme.primaryDark.withOpacity(0.2)
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(e, style: TextStyle(fontSize: 24)),
+                    .map(
+                      (e) => GestureDetector(
+                        onTap: () => setState(() => icon = e),
+                        child: Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: icon == e
+                                ? AppTheme.primaryDark.withOpacity(0.2)
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        ))
+                          child: Text(e, style: TextStyle(fontSize: 24)),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
               SizedBox(height: 12),
-              TextField(controller: nameCtrl, decoration: InputDecoration(hintText: 'Goal name')),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(hintText: 'Goal name'),
+              ),
               SizedBox(height: 12),
-              Row(children: [
-                Expanded(child: TextField(controller: targetCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Target amount (₹)'))),
-                SizedBox(width: 12),
-                Expanded(child: TextField(controller: monthlyCtrl, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: 'Monthly savings'))),
-              ]),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: targetCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: 'Target amount (₹)',
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: monthlyCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(hintText: 'Monthly savings'),
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
@@ -995,7 +1224,8 @@ class _SavingsTab extends StatelessWidget {
                         name: nameCtrl.text,
                         targetAmount: double.tryParse(targetCtrl.text) ?? 0,
                         currentAmount: goal?.currentAmount ?? 0,
-                        monthlyContribution: double.tryParse(monthlyCtrl.text) ?? 0,
+                        monthlyContribution:
+                            double.tryParse(monthlyCtrl.text) ?? 0,
                         icon: icon,
                       );
                       if (goal == null) {
@@ -1009,9 +1239,14 @@ class _SavingsTab extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryDark,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text(goal == null ? 'Create Goal' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    goal == null ? 'Create Goal' : 'Save Changes',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],
@@ -1031,7 +1266,8 @@ class _BillsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bills = state.utilityBills..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    final bills = state.utilityBills
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
     return Scaffold(
       floatingActionButton: FloatingActionButton(
@@ -1051,8 +1287,8 @@ class _BillsTab extends StatelessWidget {
                 Color statusColor = bill.isPaid
                     ? AppTheme.accentTeal
                     : bill.isOverdue
-                        ? AppTheme.accentOrange
-                        : AppTheme.primaryDark;
+                    ? AppTheme.accentOrange
+                    : AppTheme.primaryDark;
                 IconData typeIcon;
                 switch (bill.type.toLowerCase()) {
                   case 'electricity':
@@ -1078,7 +1314,9 @@ class _BillsTab extends StatelessWidget {
                     color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
                     borderRadius: BorderRadius.circular(14),
                     border: bill.isOverdue && !bill.isPaid
-                        ? Border.all(color: AppTheme.accentOrange.withOpacity(0.4))
+                        ? Border.all(
+                            color: AppTheme.accentOrange.withOpacity(0.4),
+                          )
                         : null,
                   ),
                   child: Row(
@@ -1097,21 +1335,27 @@ class _BillsTab extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(bill.type,
-                                style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark ? AppTheme.darkText : AppTheme.lightText)),
+                            Text(
+                              bill.type,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isDark
+                                    ? AppTheme.darkText
+                                    : AppTheme.lightText,
+                              ),
+                            ),
                             Text(
                               bill.isPaid
                                   ? 'Paid ✓'
                                   : bill.isOverdue
-                                      ? 'OVERDUE'
-                                      : 'Due ${DateFormat('MMM dd').format(bill.dueDate)}',
+                                  ? 'OVERDUE'
+                                  : 'Due ${DateFormat('MMM dd').format(bill.dueDate)}',
                               style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: statusColor),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: statusColor,
+                              ),
                             ),
                           ],
                         ),
@@ -1121,7 +1365,9 @@ class _BillsTab extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                          color: isDark
+                              ? AppTheme.darkText
+                              : AppTheme.lightText,
                         ),
                       ),
                       SizedBox(width: 8),
@@ -1139,8 +1385,8 @@ class _BillsTab extends StatelessWidget {
                               color: bill.isPaid
                                   ? AppTheme.accentTeal
                                   : isDark
-                                      ? AppTheme.darkTextSecondary
-                                      : AppTheme.lightTextSecondary,
+                                  ? AppTheme.darkTextSecondary
+                                  : AppTheme.lightTextSecondary,
                               width: 2,
                             ),
                           ),
@@ -1151,7 +1397,9 @@ class _BillsTab extends StatelessWidget {
                       ),
                       IconButton(
                         icon: Icon(Icons.edit_rounded, size: 20),
-                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.lightTextSecondary,
                         onPressed: () => _showBillDialog(context, bill: bill),
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
@@ -1173,7 +1421,9 @@ class _BillsTab extends StatelessWidget {
   }
 
   void _showBillDialog(BuildContext context, {UtilityBill? bill}) {
-    final amountCtrl = TextEditingController(text: bill?.amount.toString() ?? '');
+    final amountCtrl = TextEditingController(
+      text: bill?.amount.toString() ?? '',
+    );
     String type = bill?.type ?? 'Electricity';
     DateTime dueDate = bill?.dueDate ?? DateTime.now().add(Duration(days: 15));
 
@@ -1189,35 +1439,63 @@ class _BillsTab extends StatelessWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => Padding(
           padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
-              SizedBox(height: 16),
-              Text(bill == null ? 'Add Utility Bill' : 'Edit Utility Bill',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 16),
-              Row(children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: type,
-                    items: ['Electricity', 'Water', 'Internet', 'Gas', 'Phone', 'Other']
-                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
-                        .toList(),
-                    onChanged: (v) => setState(() => type = v!),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: amountCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(hintText: 'Amount (₹)'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                bill == null ? 'Add Utility Bill' : 'Edit Utility Bill',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: type,
+                      items:
+                          [
+                                'Electricity',
+                                'Water',
+                                'Internet',
+                                'Gas',
+                                'Phone',
+                                'Other',
+                              ]
+                              .map(
+                                (t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)),
+                              )
+                              .toList(),
+                      onChanged: (v) => setState(() => type = v!),
+                    ),
                   ),
-                ),
-              ]),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: amountCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(hintText: 'Amount (₹)'),
+                    ),
+                  ),
+                ],
+              ),
               SizedBox(height: 12),
               GestureDetector(
                 onTap: () async {
@@ -1235,11 +1513,15 @@ class _BillsTab extends StatelessWidget {
                     color: Theme.of(context).inputDecorationTheme.fillColor,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(children: [
-                    Icon(Icons.calendar_today_rounded, size: 16),
-                    SizedBox(width: 8),
-                    Text('Due: ${DateFormat('MMM dd, yyyy').format(dueDate)}'),
-                  ]),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Due: ${DateFormat('MMM dd, yyyy').format(dueDate)}',
+                      ),
+                    ],
+                  ),
                 ),
               ),
               SizedBox(height: 20),
@@ -1268,9 +1550,14 @@ class _BillsTab extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryDark,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  child: Text(bill == null ? 'Add Bill' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(
+                    bill == null ? 'Add Bill' : 'Save Changes',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ],

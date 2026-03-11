@@ -148,9 +148,10 @@ class FirebaseService {
     required String collection,
     required Map<String, dynamic> data,
   }) async {
+    final Map<String, dynamic> docData = Map.from(data)..remove('id');
     final docRef = await _db
         .collection(_collectionPath(householdId, collection))
-        .add({...data, 'createdAt': FieldValue.serverTimestamp()});
+        .add({...docData, 'createdAt': FieldValue.serverTimestamp()});
     return docRef.id;
   }
 
@@ -188,7 +189,7 @@ class FirebaseService {
         .collection(_collectionPath(householdId, collection))
         .get();
     return snapshot.docs
-        .map((doc) => {'id': doc.id, ...doc.data()})
+        .map((doc) => {...doc.data(), 'id': doc.id})
         .toList();
   }
 
@@ -201,7 +202,7 @@ class FirebaseService {
         .collection(_collectionPath(householdId, collection))
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => {'id': doc.id, ...doc.data()})
+            .map((doc) => {...doc.data(), 'id': doc.id})
             .toList());
   }
 
