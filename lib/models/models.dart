@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MaintenanceTask {
   String id;
@@ -124,7 +125,9 @@ class HouseholdTask {
         priority: json['priority'] ?? 'medium',
         notes: json['notes'],
         createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'])
+            ? (json['createdAt'] is Timestamp 
+                ? (json['createdAt'] as Timestamp).toDate() 
+                : DateTime.parse(json['createdAt'].toString()))
             : DateTime.now(),
       );
 }
