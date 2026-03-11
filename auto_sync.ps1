@@ -2,6 +2,10 @@ Write-Host "Auto-sync started. Checking for changes every 10 seconds..."
 Write-Host "Press Ctrl+C to stop the auto-sync."
 
 while ($true) {
+    # Fetch updates from GitHub
+    Write-Host "Checking for updates from GitHub..."
+    git pull origin main
+
     # Check if there are any changes
     $status = git status --porcelain
     if ($status) {
