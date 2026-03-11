@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "50353404265",
+    "project_id": "family-management-app-1b96d",
+    "storage_bucket": "family-management-app-1b96d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:50353404265:android:3d77573520e52a451625f8",
+        "android_client_info": {
+          "package_name": "com.azar.homemanagement"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "50353404265-rktpit9lfij4qcr7dejmps5opunvvg1d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.azar.homemanagement",
+            "certificate_hash": "3028a6ae666b1b48bbb04882819a46a4d61a98a8"
+          }
+        },
+        {
+          "client_id": "50353404265-2aa9g24u220u5i5pmbt64gjtj4sq13na.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPgQWVzpz_1AipNr7UueSlyO1TMFL7taM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "50353404265-2aa9g24u220u5i5pmbt64gjtj4sq13na.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
