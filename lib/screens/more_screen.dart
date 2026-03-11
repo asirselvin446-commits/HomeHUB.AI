@@ -222,7 +222,29 @@ class MoreScreen extends StatelessWidget {
               title: 'About HomeHub AI',
               subtitle: 'Version 1.0.0',
               color: AppTheme.darkTextSecondary,
-              onTap: () {},
+              onTap: () {
+                showAboutDialog(
+                  context: context,
+                  applicationName: 'HomeHub AI',
+                  applicationVersion: '1.0.0',
+                  applicationIcon: Container(
+                    padding: EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryDark.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.home_rounded, size: 40, color: AppTheme.primaryDark),
+                  ),
+                  applicationLegalese: '© 2026 HomeHub AI',
+                  children: [
+                    SizedBox(height: 16),
+                    Text(
+                      'A comprehensive family management solution with AI-powered insights for chores, finances, and maintenance.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ],
+                );
+              },
             ),
             _MenuItem(
               icon: Icons.logout_rounded,
