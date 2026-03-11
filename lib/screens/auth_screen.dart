@@ -116,7 +116,9 @@ class _AuthScreenState extends State<AuthScreen>
     if (error.contains('weak-password')) return 'Password should be at least 6 characters.';
     if (error.contains('invalid-email')) return 'Please enter a valid email address.';
     if (error.contains('network')) return 'Network error. Please check your connection.';
-    return 'An error occurred. Please try again.';
+    
+    // Return the actual raw error so we can debug it
+    return 'Error: $error';
   }
 
   @override
