@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
@@ -379,15 +380,21 @@ class EmergencyScreen extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // In production, this would call url_launcher to dial
+                onPressed: () async {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Calling ${contact.phone}...'),
-                      backgroundColor: AppTheme.accentTeal,
-                    ),
-                  );
+                  final url = Uri.parse('tel:${contact.phone}');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Could not launch dialer for ${contact.phone}'),
+                          backgroundColor: AppTheme.accentOrange,
+                        ),
+                      );
+                    }
+                  }
                 },
                 icon: Icon(Icons.call_rounded),
                 label: Text('Call Now',
