@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
@@ -29,7 +30,21 @@ class FamilyScreen extends StatelessWidget {
               padding: EdgeInsets.all(20),
               children: [
                 // Invite Banner
-                Container(
+                GestureDetector(
+                  onTap: () async {
+                    if (state.householdId != null) {
+                      await Clipboard.setData(ClipboardData(text: state.householdId!));
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Invite code copied: ${state.householdId!}'),
+                            backgroundColor: AppTheme.accentTeal,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: Container(
                   padding: EdgeInsets.all(16),
                   margin: EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
@@ -61,6 +76,7 @@ class FamilyScreen extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
                 ),
 
                 ...state.familyMembers
