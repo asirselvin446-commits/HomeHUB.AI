@@ -42,10 +42,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     _textController.clear();
     setState(() => _isTyping = true);
 
-    await context.read<AppState>().sendChatMessage(text);
-
-    if (!mounted) return;
-    setState(() => _isTyping = false);
+    try {
+      await context.read<AppState>().sendChatMessage(text);
+    } finally {
+      if (mounted) {
+        setState(() => _isTyping = false);
+      }
+    }
 
     // Scroll to bottom
     Future.delayed(const Duration(milliseconds: 120), () {
