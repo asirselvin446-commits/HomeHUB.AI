@@ -72,12 +72,14 @@ class FirebaseService {
     required String uid,
     required String name,
     required String email,
+    String? nickname,
     String? householdId,
     String role = 'Admin',
     String avatar = '👑',
   }) async {
     await _db.collection('users').doc(uid).set({
       'name': name,
+      'nickname': nickname,
       'email': email,
       'householdId': householdId,
       'role': role,

@@ -42,6 +42,15 @@ class AppState extends ChangeNotifier {
   bool get isDarkMode => _isDarkMode;
   String? get householdId => _householdId;
   double get monthlyIncome => _monthlyIncome;
+  String? get nickname => _userProfile?['nickname'];
+  String? get familyRole => _userProfile?['role'];
+  bool get isProfileComplete =>
+      _userProfile != null &&
+      _userProfile!['nickname'] != null &&
+      _userProfile!['nickname'].toString().isNotEmpty &&
+      _userProfile!['role'] != null &&
+      _userProfile!['role'] != 'Admin' && // Admin is default, we want them to pick a role
+      _userProfile!['role'] != 'Member'; // Member is default for joined users
 
   String get currentUser =>
       _firebaseUser?.displayName ?? _userProfile?['name'] ?? 'User';
@@ -284,6 +293,28 @@ class AppState extends ChangeNotifier {
 
   Future<void> resetPassword(String email) async {
     await _firebase.resetPassword(email);
+  }
+
+  Future<void> updateProfile({
+    required String nickname,
+    required String role,
+    required String avatar,
+  }) async {
+    if (_firebaseUser == null) return;
+
+    await _firebase.saveUserProfile(
+      uid: _firebaseUser!.uid,
+      name: _firebaseUser!.displayName ?? 'User',
+      email: _firebaseUser!.email ?? '',
+      nickname: nickname,
+      role: role,
+      avatar: avatar,
+      householdId: _householdId,
+    );
+
+    // Reload profile
+    _userProfile = await _firebase.getUserProfile(_firebaseUser!.uid);
+    notifyListeners();
   }
 
   // ============ HOUSEHOLD ============

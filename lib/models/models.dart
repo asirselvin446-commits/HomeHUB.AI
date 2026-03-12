@@ -355,6 +355,7 @@ class UtilityBill {
 class FamilyMember {
   String id;
   String name;
+  String? nickname;
   String email;
   String role;
   String avatar;
@@ -362,6 +363,7 @@ class FamilyMember {
   FamilyMember({
     required this.id,
     required this.name,
+    this.nickname,
     required this.email,
     this.role = 'Member',
     this.avatar = '👤',
@@ -370,6 +372,7 @@ class FamilyMember {
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
+        'nickname': nickname,
         'email': email,
         'role': role,
         'avatar': avatar,
@@ -378,6 +381,7 @@ class FamilyMember {
   factory FamilyMember.fromJson(Map<String, dynamic> json) => FamilyMember(
         id: json['id'],
         name: json['name'],
+        nickname: json['nickname'],
         email: json['email'],
         role: json['role'] ?? 'Member',
         avatar: json['avatar'] ?? '👤',

@@ -7,6 +7,7 @@ import 'theme/app_theme.dart';
 import 'providers/app_state.dart';
 import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/profile_setup_screen.dart';
 import 'screens/home_shell.dart';
 
 void main() async {
@@ -49,6 +50,11 @@ class HomeHubApp extends StatelessWidget {
     // Not logged in → show auth screen
     if (!appState.isLoggedIn) {
       return AuthScreen();
+    }
+
+    // Profile not set up → show profile setup
+    if (!appState.isProfileComplete) {
+      return ProfileSetupScreen();
     }
 
     // Logged in but no household → show household setup
