@@ -23,12 +23,49 @@ class _FinanceScreenState extends State<FinanceScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Widget _tabChip(String label, int index, bool isDark) {
+    final selected = _tabController.index == index;
+    return GestureDetector(
+      onTap: () {
+        _tabController.animateTo(index);
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppTheme.primaryDark
+              : isDark
+                  ? AppTheme.darkCard
+                  : AppTheme.lightCard,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected
+                ? Colors.white
+                : isDark
+                    ? AppTheme.darkTextSecondary
+                    : AppTheme.lightTextSecondary,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -38,26 +75,25 @@ class _FinanceScreenState extends State<FinanceScreen>
     return Scaffold(
       appBar: AppBar(
         title: Text('Finance'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: AppTheme.primaryDark,
-          labelColor: AppTheme.primaryDark,
-          unselectedLabelColor: isDark
-              ? AppTheme.darkTextSecondary
-              : AppTheme.lightTextSecondary,
-          tabAlignment: TabAlignment.start,
-          tabs: [
-            Tab(text: '💰 Expenses'),
-            Tab(text: '💳 Debts'),
-            Tab(text: '🎯 Savings'),
-            Tab(text: '📄 Bills'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Column(
         children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                _tabChip('💰 Expenses', 0, isDark),
+                _tabChip('💳 Debts', 1, isDark),
+                _tabChip('🎯 Savings', 2, isDark),
+                _tabChip('📄 Bills', 3, isDark),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
           _ExpensesTab(currencyFormat: currencyFormat),
           _DebtsTab(currencyFormat: currencyFormat),
           _SavingsTab(currencyFormat: currencyFormat),
