@@ -6,6 +6,7 @@ import '../models/models.dart';
 import '../services/firebase_service.dart';
 import '../services/ai_service.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
 
 class AppState extends ChangeNotifier {
   final FirebaseService _firebase = FirebaseService();
@@ -17,6 +18,7 @@ class AppState extends ChangeNotifier {
   String? _householdId;
   bool _isInitialized = false;
   bool _isDarkMode = true;
+  bool _notificationsEnabled = true;
   double _monthlyIncome = 0;
 
   // Data lists
@@ -40,6 +42,7 @@ class AppState extends ChangeNotifier {
   bool get hasHousehold => _householdId != null;
   bool get isInitialized => _isInitialized;
   bool get isDarkMode => _isDarkMode;
+  bool get notificationsEnabled => _notificationsEnabled;
   String? get householdId => _householdId;
   double get monthlyIncome => _monthlyIncome;
   String? get nickname => _userProfile?['nickname'];
@@ -107,6 +110,7 @@ class AppState extends ChangeNotifier {
   Future<void> init() async {
     await _localStorage.init();
     _isDarkMode = _localStorage.getIsDarkMode();
+    _notificationsEnabled = _localStorage.getNotificationsEnabled();
 
     // Listen to auth state changes
     _firebase.authStateChanges.listen((user) {
@@ -157,12 +161,24 @@ class AppState extends ChangeNotifier {
     _subscriptions.add(
       _firebase.streamMaintenanceTasks(_householdId!).listen((data) {
         _maintenanceTasks = data;
+        if (_notificationsEnabled) {
+          NotificationService.instance.scheduleMaintenanceReminders(data);
+        }
         notifyListeners();
       }),
     );
 
     _subscriptions.add(
       _firebase.streamHouseholdTasks(_householdId!).listen((data) {
+        // Detect newly added tasks
+        if (_notificationsEnabled && data.length > _householdTasks.length) {
+          final newTasks = data.where(
+            (t) => !_householdTasks.any((old) => old.id == t.id),
+          );
+          for (final t in newTasks) {
+            NotificationService.instance.showTaskAddedNotification(t.title);
+          }
+        }
         _householdTasks = data;
         notifyListeners();
       }),
@@ -170,6 +186,15 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamGroceryItems(_householdId!).listen((data) {
+        // Detect newly added groceries
+        if (_notificationsEnabled && data.length > _groceryItems.length) {
+          final newItems = data.where(
+            (g) => !_groceryItems.any((old) => old.id == g.id),
+          );
+          for (final g in newItems) {
+            NotificationService.instance.showGroceryAddedNotification(g.name);
+          }
+        }
         _groceryItems = data;
         notifyListeners();
       }),
@@ -185,6 +210,9 @@ class AppState extends ChangeNotifier {
     _subscriptions.add(
       _firebase.streamDebts(_householdId!).listen((data) {
         _debts = data;
+        if (_notificationsEnabled) {
+          NotificationService.instance.scheduleDebtReminders(data);
+        }
         notifyListeners();
       }),
     );
@@ -199,6 +227,9 @@ class AppState extends ChangeNotifier {
     _subscriptions.add(
       _firebase.streamUtilityBills(_householdId!).listen((data) {
         _utilityBills = data;
+        if (_notificationsEnabled) {
+          NotificationService.instance.scheduleBillReminders(data);
+        }
         notifyListeners();
       }),
     );
