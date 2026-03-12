@@ -49,9 +49,9 @@ class _GroceryScreenState extends State<GroceryScreen> {
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                _filterChip('🛒 Grocery List', 'unpurchased', isDark),
+                _filterChip('Grocery List', 'unpurchased', isDark),
                 SizedBox(width: 8),
-                _filterChip('✅ Purchased', 'purchased', isDark),
+                _filterChip('Purchased', 'purchased', isDark),
               ],
             ),
           ),
