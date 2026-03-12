@@ -643,20 +643,30 @@ class AppState extends ChangeNotifier {
     await _firebase.saveChatMessage(_householdId!, userMsg);
 
     // Process with AI — uses Gemini LLM when configured, falls back to regex
-    final result = await AIService.processMessageWithLLM(
-      message: text,
-      maintenanceTasks: _maintenanceTasks,
-      householdTasks: _householdTasks,
-      groceryItems: _groceryItems,
-      expenses: _expenses,
-      debts: _debts,
-      bills: _utilityBills,
-      monthlyIncome: _monthlyIncome,
-    );
+    AIResult result;
+    try {
+      result = await AIService.processMessageWithLLM(
+        message: text,
+        maintenanceTasks: _maintenanceTasks,
+        householdTasks: _householdTasks,
+        groceryItems: _groceryItems,
+        expenses: _expenses,
+        debts: _debts,
+        bills: _utilityBills,
+        monthlyIncome: _monthlyIncome,
+      );
 
-    // Execute action if present
-    if (result.action != null) {
-      await _executeAIAction(result.action!);
+      // Execute action if present
+      if (result.action != null) {
+        await _executeAIAction(result.action!);
+      }
+    } catch (e) {
+      debugPrint('AI Processing error: $e');
+      // Fallback if even the AIService fallback fails
+      result = AIResult(
+        reply: 'I encountered a technical hiccup while processing that. '
+               'Could you try again or ask something simpler?',
+      );
     }
 
     // Save AI reply
