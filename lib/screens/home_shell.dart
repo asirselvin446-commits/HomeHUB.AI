@@ -61,6 +61,15 @@ class _HomeShellState extends State<HomeShell> {
                 _navItem(3, Icons.account_balance_wallet_rounded, 'Finance', isDark),
                 _navItem(4, Icons.more_horiz_rounded, 'More', isDark),
                 _aiAssistButton(isDark),
+<<<<<<< HEAD
+=======
+                _navItem(1, Icons.dashboard_rounded, 'Home', isDark),
+                _navItem(2, Icons.task_alt_rounded, 'Tasks', isDark),
+                _navItem(3, Icons.shopping_cart_rounded, 'Grocery', isDark),
+                _navItem(
+                    4, Icons.account_balance_wallet_rounded, 'Finance', isDark),
+                _navItem(5, Icons.more_horiz_rounded, 'More', isDark),
+>>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
               ],
             ),
           ),

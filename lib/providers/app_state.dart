@@ -642,9 +642,15 @@ class AppState extends ChangeNotifier {
     final userMsg = ChatMessage(id: '', text: text, isUser: true);
     await _firebase.saveChatMessage(_householdId!, userMsg);
 
+<<<<<<< HEAD
     // Process with AI (detects intent + builds human reply)
     final result = AIService.processMessage(
       message: text,
+=======
+    // Generate AI response
+    final command = AIService.getChatResponse(
+      question: text,
+>>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
       maintenanceTasks: _maintenanceTasks,
       householdTasks: _householdTasks,
       groceryItems: _groceryItems,
@@ -654,6 +660,7 @@ class AppState extends ChangeNotifier {
       monthlyIncome: _monthlyIncome,
     );
 
+<<<<<<< HEAD
     // Execute action if present
     if (result.action != null) {
       await _executeAIAction(result.action!);
@@ -661,6 +668,62 @@ class AppState extends ChangeNotifier {
 
     // Save AI reply
     final aiMsg = ChatMessage(id: '', text: result.reply, isUser: false);
+=======
+    // Execute actions based on command
+    if (command.actionType == AIActionType.addTask) {
+      final title = command.actionData?['title'] as String?;
+      if (title != null) {
+        await addHouseholdTask(HouseholdTask(
+          id: '',
+          title: title,
+          category: 'General',
+          assignedTo: currentUser,
+        ));
+      }
+    } else if (command.actionType == AIActionType.completeTask) {
+      final title = command.actionData?['title'] as String?;
+      if (title != null) {
+        // Find task by title (case-insensitive)
+        final taskToComplete = _householdTasks.cast<HouseholdTask?>().firstWhere(
+            (t) => t != null && t.title.toLowerCase() == title.toLowerCase() && !t.isCompleted,
+            orElse: () => _householdTasks.cast<HouseholdTask?>().firstWhere(
+                (t) => t != null && t.title.toLowerCase().contains(title.toLowerCase()) && !t.isCompleted,
+                orElse: () => null));
+                
+        if (taskToComplete != null) {
+          // toggleHouseholdTask finds by ID and marks as complete
+          await toggleHouseholdTask(taskToComplete.id);
+        }
+      }
+    } else if (command.actionType == AIActionType.addGrocery) {
+      final name = command.actionData?['name'] as String?;
+      if (name != null) {
+        await addGroceryItem(GroceryItem(
+          id: '',
+          name: name,
+        ));
+      }
+    } else if (command.actionType == AIActionType.addExpense) {
+      final amount = command.actionData?['amount'] as double?;
+      final title = command.actionData?['title'] as String?;
+      if (amount != null && title != null) {
+        await addExpense(Expense(
+          id: '',
+          title: title,
+          amount: amount,
+          category: 'General',
+          date: DateTime.now(),
+          paidBy: currentUser,
+        ));
+      }
+    }
+
+    final aiMsg = ChatMessage(
+      id: '',
+      text: command.responseText,
+      isUser: false,
+    );
+>>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
     await _firebase.saveChatMessage(_householdId!, aiMsg);
   }
 

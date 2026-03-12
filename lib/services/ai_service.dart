@@ -761,4 +761,215 @@ class AIService {
       'overall': overallScore,
     };
   }
+<<<<<<< HEAD
+=======
+
+  // AI Chat Response
+  static AICommand getChatResponse({
+    required String question,
+    required List<MaintenanceTask> maintenanceTasks,
+    required List<HouseholdTask> householdTasks,
+    required List<GroceryItem> groceryItems,
+    required List<Expense> expenses,
+    required List<Debt> debts,
+    required List<UtilityBill> bills,
+    required double monthlyIncome,
+  }) {
+    final q = question.toLowerCase();
+    final now = DateTime.now();
+    final currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+
+    // Command Parsing Setup
+    // 1. Add Task: "add task [title]"
+    final addTaskMatch = RegExp(r'^add task (.+)$').firstMatch(q);
+    if (addTaskMatch != null) {
+      final title = addTaskMatch.group(1)!.trim();
+      return AICommand(
+        responseText: 'Adding task "$title" to your to-do list.',
+        actionType: AIActionType.addTask,
+        actionData: {'title': title},
+      );
+    }
+
+    // 2. Complete Task: "complete task [title]" or "mark task [title] as done"
+    final completeTaskMatch = RegExp(r'^(?:complete task|mark task) (.+?)(?: as done)?$').firstMatch(q);
+    if (completeTaskMatch != null) {
+      final title = completeTaskMatch.group(1)!.trim();
+      return AICommand(
+        responseText: 'Marking task "$title" as completed.',
+        actionType: AIActionType.completeTask,
+        actionData: {'title': title},
+      );
+    }
+
+    // 3. Add Grocery: "add [item] to groceries" or "buy [item]"
+    final addGroceryMatch = RegExp(r'^(?:add|buy) (.+?)(?: to grocer(?:y|ies)(?: list)?)?$').firstMatch(q);
+    if (addGroceryMatch != null && !q.startsWith('add task')) {
+      final item = addGroceryMatch.group(1)!.trim();
+      return AICommand(
+        responseText: 'Adding "$item" to your grocery list.',
+        actionType: AIActionType.addGrocery,
+        actionData: {'name': item},
+      );
+    }
+
+    // 4. Add Expense: "spent [amount] on [title]" or "log expense [amount] for [title]"
+    final addExpenseMatch = RegExp(r'^(?:spent|log expense) (?:rs\.?|₹|\$)?\s*(\d+(?:\.\d+)?)\s+(?:on|for) (.+)$').firstMatch(q);
+    if (addExpenseMatch != null) {
+      final amount = double.tryParse(addExpenseMatch.group(1)!) ?? 0.0;
+      final title = addExpenseMatch.group(2)!.trim();
+      return AICommand(
+        responseText: 'Logging expense of ${currencyFormat.format(amount)} for "$title".',
+        actionType: AIActionType.addExpense,
+        actionData: {'amount': amount, 'title': title},
+      );
+    }
+
+    // Previous standard responses
+    String responseText = '';
+
+    // Tasks due this week
+    if (q.contains('task') && (q.contains('week') || q.contains('due'))) {
+      final weekEnd = now.add(Duration(days: 7));
+      final dueTasks = householdTasks.where((t) =>
+          !t.isCompleted &&
+          t.dueDate != null &&
+          t.dueDate!.isBefore(weekEnd));
+      if (dueTasks.isEmpty) {
+        responseText = '✅ No tasks due this week! You\'re all caught up.';
+      } else {
+        responseText = '📋 Tasks due this week:\n';
+        for (var t in dueTasks) {
+          responseText += '• ${t.title} (${t.assignedTo ?? "Unassigned"}) - Due ${DateFormat('MMM dd').format(t.dueDate!)}\n';
+        }
+      }
+      return AICommand(responseText: responseText);
+    }
+
+    // Grocery related
+    if (q.contains('grocery') || q.contains('groceries')) {
+      if (q.contains('how many') || q.contains('count')) {
+        int unpurchased = groceryItems.where((g) => !g.isPurchased).length;
+        return AICommand(responseText: '🛒 You have $unpurchased items on your grocery list that haven\'t been purchased yet.');
+      }
+      final unpurchased = groceryItems.where((g) => !g.isPurchased).toList();
+      if (unpurchased.isEmpty) return AICommand(responseText: '✅ Your grocery list is all clear!');
+      responseText = '🛒 Grocery items to buy:\n';
+      for (var g in unpurchased) {
+        responseText += '• ${g.name} (${g.quantity} ${g.unit})\n';
+      }
+      return AICommand(responseText: responseText);
+    }
+
+    // Expense related
+    if (q.contains('spend') || q.contains('spent') || q.contains('expense')) {
+      final thisMonth = expenses.where((e) =>
+          e.date.month == now.month && e.date.year == now.year);
+
+      if (q.contains('grocer')) {
+        double grocerySpend = thisMonth
+            .where((e) => e.category.toLowerCase().contains('grocer'))
+            .fold(0.0, (sum, e) => sum + e.amount);
+        return AICommand(responseText: '🛒 You\'ve spent ${currencyFormat.format(grocerySpend)} on groceries this month.');
+      }
+
+      double total = thisMonth.fold(0.0, (sum, e) => sum + e.amount);
+      Map<String, double> categories = {};
+      for (var e in thisMonth) {
+        categories[e.category] = (categories[e.category] ?? 0) + e.amount;
+      }
+
+      responseText = '💰 This month\'s spending: ${currencyFormat.format(total)}\n\nBreakdown:\n';
+      categories.forEach((cat, amt) {
+        responseText += '• $cat: ${currencyFormat.format(amt)}\n';
+      });
+      return AICommand(responseText: responseText);
+    }
+
+    // Maintenance / AC related
+    if (q.contains('maintenance') || q.contains('ac') || q.contains('service')) {
+      String searchTerm = '';
+      if (q.contains('ac') || q.contains('air condition')) searchTerm = 'ac';
+      if (q.contains('plumb')) searchTerm = 'plumb';
+      if (q.contains('electric')) searchTerm = 'electric';
+
+      if (searchTerm.isNotEmpty) {
+        final task = maintenanceTasks.firstWhere(
+          (t) => t.name.toLowerCase().contains(searchTerm) ||
+              t.category.toLowerCase().contains(searchTerm),
+          orElse: () => MaintenanceTask(
+              id: '', name: '', category: ''),
+        );
+        if (task.id.isNotEmpty) {
+          if (task.nextDue != null) {
+            return AICommand(responseText: '🔧 ${task.name} is scheduled for ${DateFormat('MMM dd, yyyy').format(task.nextDue!)}. ${task.isOverdue ? '⚠️ It\'s overdue!' : ''}');
+          }
+          return AICommand(responseText: '🔧 ${task.name} has no scheduled date. Consider setting one!');
+        }
+        return AICommand(responseText: 'I couldn\'t find a maintenance task matching "$searchTerm". Try adding one!');
+      }
+
+      final upcoming = maintenanceTasks
+          .where((t) => !t.isCompleted && t.nextDue != null)
+          .toList()
+        ..sort((a, b) => a.nextDue!.compareTo(b.nextDue!));
+
+      if (upcoming.isEmpty) return AICommand(responseText: '✅ No upcoming maintenance tasks.');
+      responseText = '🔧 Upcoming maintenance:\n';
+      for (var t in upcoming.take(5)) {
+        responseText += '• ${t.name} - ${DateFormat('MMM dd').format(t.nextDue!)} ${t.isOverdue ? "⚠️ OVERDUE" : ""}\n';
+      }
+      return AICommand(responseText: responseText);
+    }
+
+    // Debt related
+    if (q.contains('debt') || q.contains('loan') || q.contains('owe')) {
+      if (debts.isEmpty) return AICommand(responseText: '🎉 You have no debts recorded. That\'s great!');
+      double totalDebt = debts.fold(0.0, (sum, d) => sum + d.remainingAmount);
+      responseText = '💳 Total remaining debt: ${currencyFormat.format(totalDebt)}\n\n';
+      for (var d in debts) {
+        responseText += '• ${d.name}: ${currencyFormat.format(d.remainingAmount)} remaining';
+        if (d.monthlyPayment > 0) {
+          responseText += ' (~${d.monthsToPayoff} months to payoff)';
+        }
+        responseText += '\n';
+      }
+      return AICommand(responseText: responseText);
+    }
+
+    // Bills
+    if (q.contains('bill')) {
+      final unpaid = bills.where((b) => !b.isPaid).toList()
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+      if (unpaid.isEmpty) return AICommand(responseText: '✅ All bills are paid!');
+      responseText = '📄 Unpaid bills:\n';
+      for (var b in unpaid) {
+        responseText += '• ${b.type}: ${currencyFormat.format(b.amount)} - Due ${DateFormat('MMM dd').format(b.dueDate)} ${b.isOverdue ? "⚠️ OVERDUE" : ""}\n';
+      }
+      return AICommand(responseText: responseText);
+    }
+
+    // Health / score
+    if (q.contains('health') || q.contains('score') || q.contains('status')) {
+      final scores = getHomeHealthScores(
+        maintenanceTasks: maintenanceTasks,
+        householdTasks: householdTasks,
+        bills: bills,
+      );
+      return AICommand(responseText: '🏠 Home Health Score: ${scores['overall']!.toInt()}/100\n\n'
+          '🔧 Maintenance: ${scores['maintenance']!.toInt()}%\n'
+          '📋 Tasks: ${scores['tasks']!.toInt()}%\n'
+          '📄 Bills: ${scores['bills']!.toInt()}%');
+    }
+
+    // Default / Help
+    return AICommand(responseText: '🤖 I can help you with:\n\n'
+        '• "Add task clean the garage"\n'
+        '• "Buy milk to groceries"\n'
+        '• "Spent 500 on dinner"\n'
+        '• "What tasks are due this week?"\n'
+        '• "How much did we spend on groceries?"\n'
+        'Try asking or commanding me!');
+  }
+>>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
 }

@@ -444,3 +444,23 @@ class ChatMessage {
         timestamp: DateTime.parse(json['timestamp']),
       );
 }
+
+enum AIActionType {
+  none,
+  addGrocery,
+  addTask,
+  completeTask,
+  addExpense,
+}
+
+class AICommand {
+  final String responseText;
+  final AIActionType actionType;
+  final Map<String, dynamic>? actionData;
+
+  AICommand({
+    required this.responseText,
+    this.actionType = AIActionType.none,
+    this.actionData,
+  });
+}

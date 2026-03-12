@@ -46,3 +46,8 @@ app.*.map.json
 node_modules/
 package-lock.json
 package.json
+
+# Analysis and temporary files
+temp.txt
+analyze_output*.txt
+*.ps1.log
