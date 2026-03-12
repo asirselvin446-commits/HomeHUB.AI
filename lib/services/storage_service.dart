@@ -14,6 +14,12 @@ class StorageService {
   Future<void> setIsDarkMode(bool value) =>
       _prefs.setBool('isDarkMode', value);
 
+  // Notification preference
+  bool getNotificationsEnabled() =>
+      _prefs.getBool('notificationsEnabled') ?? true;
+  Future<void> setNotificationsEnabled(bool value) =>
+      _prefs.setBool('notificationsEnabled', value);
+
   // Clear local preferences
   Future<void> clear() async => await _prefs.clear();
 }
