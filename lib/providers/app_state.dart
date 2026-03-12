@@ -10,7 +10,6 @@ import '../services/storage_service.dart';
 class AppState extends ChangeNotifier {
   final FirebaseService _firebase = FirebaseService();
   final StorageService _localStorage = StorageService();
-  final _uuid = Uuid();
 
   // Auth state
   User? _firebaseUser;
@@ -639,17 +638,13 @@ class AppState extends ChangeNotifier {
   Future<void> sendChatMessage(String text) async {
     if (_householdId == null) return;
 
-    // Add user message
-    final userMsg = ChatMessage(
-      id: '',
-      text: text,
-      isUser: true,
-    );
+    // Save user message
+    final userMsg = ChatMessage(id: '', text: text, isUser: true);
     await _firebase.saveChatMessage(_householdId!, userMsg);
 
-    // Generate AI response
-    final response = AIService.getChatResponse(
-      question: text,
+    // Process with AI (detects intent + builds human reply)
+    final result = AIService.processMessage(
+      message: text,
       maintenanceTasks: _maintenanceTasks,
       householdTasks: _householdTasks,
       groceryItems: _groceryItems,
@@ -659,12 +654,56 @@ class AppState extends ChangeNotifier {
       monthlyIncome: _monthlyIncome,
     );
 
-    final aiMsg = ChatMessage(
-      id: '',
-      text: response,
-      isUser: false,
-    );
+    // Execute action if present
+    if (result.action != null) {
+      await _executeAIAction(result.action!);
+    }
+
+    // Save AI reply
+    final aiMsg = ChatMessage(id: '', text: result.reply, isUser: false);
     await _firebase.saveChatMessage(_householdId!, aiMsg);
+  }
+
+  Future<void> _executeAIAction(AIAction action) async {
+    switch (action.type) {
+      case 'add_grocery':
+        final item = GroceryItem(
+          id: '',
+          name: action.data['name'] ?? 'Item',
+          category: action.data['category'] ?? 'General',
+          quantity: action.data['quantity'] ?? 1,
+          unit: action.data['unit'] ?? 'pcs',
+          addedBy: currentUser,
+        );
+        await addGroceryItem(item);
+        break;
+
+      case 'add_task':
+        final task = HouseholdTask(
+          id: '',
+          title: action.data['title'] ?? 'New Task',
+          category: action.data['category'] ?? 'General',
+          priority: action.data['priority'] ?? 'medium',
+          dueDate: action.data['dueDate'] != null
+              ? DateTime.parse(action.data['dueDate'])
+              : null,
+          assignedTo: currentUser,
+        );
+        await addHouseholdTask(task);
+        break;
+
+      case 'complete_grocery':
+        await toggleGroceryItem(action.data['id']);
+        break;
+
+      case 'complete_task':
+        await toggleHouseholdTask(action.data['id']);
+        break;
+
+      case 'delete_grocery':
+        await deleteGroceryItem(action.data['id']);
+        break;
+    }
   }
 
   // ============ SAMPLE DATA ============
