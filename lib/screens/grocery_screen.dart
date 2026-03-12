@@ -12,590 +12,451 @@ class GroceryScreen extends StatefulWidget {
   State<GroceryScreen> createState() => _GroceryScreenState();
 }
 
-class _GroceryScreenState extends State<GroceryScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _GroceryScreenState extends State<GroceryScreen> {
+  String _filter = 'unpurchased';
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Grocery & Pantry'),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppTheme.primaryDark,
-          labelColor: AppTheme.primaryDark,
-          unselectedLabelColor:
-              isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-          tabs: [
-            Tab(text: '🛒 Grocery List'),
-            Tab(text: '📦 Pantry'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _GroceryListTab(),
-          _PantryTab(),
-        ],
-      ),
-    );
-  }
-}
-
-class _GroceryListTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final items = state.groceryItems;
     final unpurchased = items.where((g) => !g.isPurchased).toList();
     final purchased = items.where((g) => g.isPurchased).toList();
 
     return Scaffold(
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
+      appBar: AppBar(title: Text('Grocery List')),
+      floatingActionButton: _filter == 'unpurchased'
+          ? FloatingActionButton(
+              heroTag: 'addGrocery',
+              onPressed: () => showGroceryDialog(context),
+              child: Icon(Icons.add_rounded),
+            )
+          : (purchased.isNotEmpty
+              ? FloatingActionButton.small(
+                  heroTag: 'clear',
+                  onPressed: () => state.clearPurchasedGroceries(),
+                  backgroundColor: AppTheme.accentOrange,
+                  child: Icon(Icons.clear_all_rounded, color: Colors.white),
+                )
+              : null),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (purchased.isNotEmpty)
-            FloatingActionButton.small(
-              heroTag: 'clear',
-              onPressed: () => state.clearPurchasedGroceries(),
-              backgroundColor: AppTheme.accentOrange,
-              child: Icon(Icons.clear_all_rounded, color: Colors.white),
+          // Filter chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: Row(
+              children: [
+                _filterChip('🛒 Grocery List', 'unpurchased', isDark),
+                SizedBox(width: 8),
+                _filterChip('✅ Purchased', 'purchased', isDark),
+              ],
             ),
-          SizedBox(height: 8),
-          FloatingActionButton(
-            heroTag: 'addGrocery',
-            onPressed: () => _showGroceryDialog(context),
-            child: Icon(Icons.add_rounded),
+          ),
+
+          Expanded(
+            child: _filter == 'unpurchased'
+                ? _buildUnpurchasedList(unpurchased, isDark, state)
+                : _buildPurchasedList(purchased, isDark, state),
           ),
         ],
       ),
-      body: items.isEmpty
-          ? EmptyState(
-              icon: Icons.shopping_cart_rounded,
-              title: 'Grocery List Empty',
-              subtitle:
-                  'Add items to your shared grocery list.\nLow pantry items will be suggested automatically!',
-            )
-          : ListView(
-              padding: EdgeInsets.all(20),
-              children: [
-                if (unpurchased.isNotEmpty) ...[
-                  Text(
-                    'To Buy (${unpurchased.length})',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  ...unpurchased
-                      .map((item) => _groceryTile(context, item, isDark, state)),
-                ],
-                if (purchased.isNotEmpty) ...[
-                  SizedBox(height: 20),
-                  Text(
-                    'Purchased (${purchased.length})',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.lightTextSecondary,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  ...purchased
-                      .map((item) => _groceryTile(context, item, isDark, state)),
-                ],
-              ],
-            ),
     );
   }
 
-  Widget _groceryTile(
-      BuildContext context, GroceryItem item, bool isDark, AppState state) {
-    return Dismissible(
-      key: Key(item.id),
-      direction: DismissDirection.endToStart,
-      onDismissed: (_) => state.deleteGroceryItem(item.id),
-      background: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.only(right: 16),
-        alignment: Alignment.centerRight,
+  Widget _filterChip(String label, String value, bool isDark) {
+    final selected = _filter == value;
+    return GestureDetector(
+      onTap: () => setState(() => _filter = value),
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: AppTheme.accentOrange,
-          borderRadius: BorderRadius.circular(12),
+          color: selected
+              ? AppTheme.primaryDark
+              : isDark
+                  ? AppTheme.darkCard
+                  : AppTheme.lightCard,
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Icon(Icons.delete_rounded, color: Colors.white),
-      ),
-      child: Container(
-        margin: EdgeInsets.only(bottom: 8),
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () => state.toggleGroceryItem(item.id),
-              child: Container(
-                width: 22,
-                height: 22,
-                decoration: BoxDecoration(
-                  color: item.isPurchased
-                      ? AppTheme.accentTeal
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: item.isPurchased
-                        ? AppTheme.accentTeal
-                        : isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
-                    width: 2,
-                  ),
-                ),
-                child: item.isPurchased
-                    ? Icon(Icons.check_rounded, color: Colors.white, size: 14)
-                    : null,
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                item.name,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
-                  decoration:
-                      item.isPurchased ? TextDecoration.lineThrough : null,
-                ),
-              ),
-            ),
-            Text(
-              '${item.quantity} ${item.unit}',
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected
+                ? Colors.white
+                : isDark
                     ? AppTheme.darkTextSecondary
                     : AppTheme.lightTextSecondary,
-              ),
-            ),
-            if (item.addedBy == 'Smart Pantry') ...[
-              SizedBox(width: 8),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppTheme.accentTeal.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '🤖 Auto',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.accentTeal,
-                  ),
-                ),
-              ),
-            ],
-            IconButton(
-              icon: Icon(Icons.edit_rounded, size: 20),
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-              onPressed: () => _showGroceryDialog(context, item: item),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showGroceryDialog(BuildContext context, {GroceryItem? item}) {
-    final nameCtrl = TextEditingController(text: item?.name ?? '');
-    final qtyCtrl = TextEditingController(text: item?.quantity.toString() ?? '1');
-    String unit = item?.unit ?? 'pcs';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
-              SizedBox(height: 16),
-              Text(item == null ? 'Add Grocery Item' : 'Edit Grocery Item',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(hintText: 'Item name'),
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: qtyCtrl,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(hintText: 'Quantity'),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: unit,
-                      items: ['pcs', 'kg', 'L', 'g', 'ml', 'dozen', 'pack']
-                          .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                          .toList(),
-                      onChanged: (v) => setState(() => unit = v!),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (nameCtrl.text.isNotEmpty) {
-                      final newItem = GroceryItem(
-                        id: item?.id ?? '',
-                        name: nameCtrl.text,
-                        quantity: int.tryParse(qtyCtrl.text) ?? 1,
-                        unit: unit,
-                        isPurchased: item?.isPurchased ?? false,
-                        addedBy: item?.addedBy ?? 'User',
-                        category: item?.category ?? 'General',
-                      );
-                      if (item == null) {
-                        context.read<AppState>().addGroceryItem(newItem);
-                      } else {
-                        context.read<AppState>().updateGroceryItem(newItem);
-                      }
-                      Navigator.pop(ctx);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(item == null ? 'Add Item' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
-                ),
-              ),
-            ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildUnpurchasedList(List<GroceryItem> unpurchased, bool isDark, AppState state) {
+    if (unpurchased.isEmpty) {
+      return EmptyState(
+        icon: Icons.shopping_cart_rounded,
+        title: 'Grocery List Empty',
+        subtitle: 'Add items to your shared grocery list.',
+      );
+    }
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Text(
+            '${unpurchased.length} items remaining',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        ...unpurchased.map((item) => buildGroceryTile(context, item, isDark, state)),
+      ],
+    );
+  }
+
+  Widget _buildPurchasedList(List<GroceryItem> purchased, bool isDark, AppState state) {
+    if (purchased.isEmpty) {
+      return EmptyState(
+        icon: Icons.check_circle_outline_rounded,
+        title: 'No Purchased Items',
+        subtitle: 'Items marked as purchased will appear here.',
+      );
+    }
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: Text(
+            '${purchased.length} items purchased',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ),
+        ...purchased.map((item) => buildGroceryTile(context, item, isDark, state)),
+      ],
     );
   }
 }
 
-class _PantryTab extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final state = context.watch<AppState>();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final items = state.pantryItems;
-
-    return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addPantry',
-        onPressed: () => _showPantryDialog(context),
-        child: Icon(Icons.add_rounded),
+Widget buildGroceryTile(
+    BuildContext context, GroceryItem item, bool isDark, AppState state) {
+  return Dismissible(
+    key: Key(item.id),
+    direction: DismissDirection.horizontal,
+    onDismissed: (direction) {
+      if (direction == DismissDirection.endToStart) {
+        state.deleteGroceryItem(item.id);
+      } else {
+        state.toggleGroceryItem(item.id);
+      }
+    },
+    background: Container(
+      margin: EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      alignment: Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: AppTheme.accentTeal,
+        borderRadius: BorderRadius.circular(16),
       ),
-      body: items.isEmpty
-          ? EmptyState(
-              icon: Icons.inventory_2_rounded,
-              title: 'Pantry Empty',
-              subtitle:
-                  'Track household items and get alerts when they run low',
-            )
-          : ListView(
-              padding: EdgeInsets.all(20),
-              children: [
-                // Low stock alert
-                if (state.lowPantryItems.isNotEmpty)
-                  Container(
-                    padding: EdgeInsets.all(14),
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentOrange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppTheme.accentOrange.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.warning_rounded,
-                            color: AppTheme.accentOrange, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          '${state.lowPantryItems.length} items running low',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.accentOrange,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ...items.map((item) => _pantryTile(context, item, isDark, state)),
-              ],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            item.isPurchased ? Icons.remove_circle_outline_rounded : Icons.check_circle_rounded, 
+            color: Colors.white, 
+            size: 28,
+          ),
+          SizedBox(height: 4),
+          Text(
+            item.isPurchased ? 'Unmark' : 'Purchased',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
             ),
-    );
-  }
-
-  Widget _pantryTile(
-      BuildContext context, PantryItem item, bool isDark, AppState state) {
-    final isLow = item.isLow;
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.all(14),
+          ),
+        ],
+      ),
+    ),
+    secondaryBackground: Container(
+      margin: EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      alignment: Alignment.centerRight,
+      decoration: BoxDecoration(
+        color: AppTheme.accentOrange,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.delete_outline_rounded, color: Colors.white, size: 28),
+          SizedBox(height: 4),
+          Text(
+            'Delete',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    ),
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: EdgeInsets.only(bottom: 14),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-        borderRadius: BorderRadius.circular(14),
-        border: isLow
-            ? Border.all(color: AppTheme.accentOrange.withOpacity(0.3))
-            : null,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: item.isPurchased
+              ? AppTheme.accentTeal.withOpacity(0.4)
+              : (isDark ? Colors.white12 : Colors.black.withOpacity(0.04)),
+          width: 1.5,
+        ),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isLow
-                  ? AppTheme.accentOrange.withOpacity(0.15)
-                  : AppTheme.accentTeal.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              isLow ? Icons.warning_rounded : Icons.inventory_2_rounded,
-              color: isLow ? AppTheme.accentOrange : AppTheme.accentTeal,
-              size: 20,
+          GestureDetector(
+            onTap: () => state.toggleGroceryItem(item.id),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: item.isPurchased ? AppTheme.accentTeal : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: item.isPurchased
+                      ? AppTheme.accentTeal
+                      : (isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary.withOpacity(0.5)),
+                  width: 2,
+                ),
+              ),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+                child: item.isPurchased
+                    ? Icon(Icons.check_rounded, color: Colors.white, size: 16, key: ValueKey('check'))
+                    : SizedBox(key: ValueKey('empty')),
+              ),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.name,
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 250),
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                    decoration: item.isPurchased ? TextDecoration.lineThrough : null,
+                    decorationColor: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                    decorationThickness: 2.0,
                   ),
+                  child: Text(item.name),
                 ),
                 SizedBox(height: 4),
-                // Stock bar
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: item.stockPercentage,
-                          backgroundColor: isLow
-                              ? AppTheme.accentOrange.withOpacity(0.15)
-                              : AppTheme.accentTeal.withOpacity(0.15),
-                          valueColor: AlwaysStoppedAnimation(
-                              isLow ? AppTheme.accentOrange : AppTheme.accentTeal),
-                          minHeight: 6,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      '${item.currentQuantity} ${item.unit}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isLow ? AppTheme.accentOrange : AppTheme.accentTeal,
-                      ),
-                    ),
-                  ],
+                Text(
+                  '${item.quantity} ${item.unit}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                  ),
                 ),
               ],
             ),
           ),
-          SizedBox(width: 8),
+          if (item.addedBy == 'Smart Pantry') ...[
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppTheme.accentTeal.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '🤖 Auto',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.accentTeal,
+                ),
+              ),
+            ),
+            SizedBox(width: 8),
+          ],
           IconButton(
-            icon: Icon(Icons.edit_rounded, size: 20),
+            icon: Icon(Icons.edit_rounded, size: 22),
             color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
-            onPressed: () => _showPantryDialog(context, item: item),
-          ),
-          // Quick quantity adjustment
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _qtyButton(Icons.remove, () {
-                if (item.currentQuantity > 0) {
-                  state.updatePantryQuantity(
-                      item.id, (item.currentQuantity - 0.5).clamp(0, 999));
-                }
-              }, isDark),
-              SizedBox(width: 4),
-              _qtyButton(Icons.add, () {
-                state.updatePantryQuantity(item.id, item.currentQuantity + 0.5);
-              }, isDark),
-            ],
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+            onPressed: () => showGroceryDialog(context, item: item),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _qtyButton(IconData icon, VoidCallback onTap, bool isDark) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 28,
-        height: 28,
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCardAlt : Color(0xFFF0F2F5),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, size: 16,
-            color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary),
-      ),
-    );
-  }
+void showGroceryDialog(BuildContext context, {GroceryItem? item}) {
+  final nameCtrl = TextEditingController(text: item?.name ?? '');
+  final qtyCtrl = TextEditingController(text: item?.quantity.toString() ?? '1');
+  String unit = item?.unit ?? 'pcs';
 
-  void _showPantryDialog(BuildContext context, {PantryItem? item}) {
-    final nameCtrl = TextEditingController(text: item?.name ?? '');
-    final currentCtrl = TextEditingController(text: item?.currentQuantity.toString() ?? '1');
-    final minCtrl = TextEditingController(text: item?.minimumQuantity.toString() ?? '0.5');
-    String unit = item?.unit ?? 'kg';
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
-          padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
-              SizedBox(height: 16),
-              Text(item == null ? 'Add Pantry Item' : 'Edit Pantry Item',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-              SizedBox(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(hintText: 'Item name'),
-              ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: currentCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(hintText: 'Current qty'),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: minCtrl,
-                      keyboardType: TextInputType.numberWithOptions(decimal: true),
-                      decoration: InputDecoration(hintText: 'Min qty (alert)'),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  SizedBox(
-                    width: 80,
-                    child: DropdownButtonFormField<String>(
-                      value: unit,
-                      items: ['kg', 'L', 'pcs', 'g', 'ml']
-                          .map((u) => DropdownMenuItem(value: u, child: Text(u)))
-                          .toList(),
-                      onChanged: (v) => setState(() => unit = v!),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (nameCtrl.text.isNotEmpty) {
-                      final newItem = PantryItem(
-                        id: item?.id ?? '',
-                        name: nameCtrl.text,
-                        currentQuantity: double.tryParse(currentCtrl.text) ?? 1,
-                        minimumQuantity: double.tryParse(minCtrl.text) ?? 0.5,
-                        unit: unit,
-                        category: item?.category ?? 'General',
-                      );
-                      if (item == null) {
-                        context.read<AppState>().addPantryItem(newItem);
-                      } else {
-                        context.read<AppState>().updatePantryItem(newItem);
-                      }
-                      Navigator.pop(ctx);
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text(item == null ? 'Add Item' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).brightness == Brightness.dark
+        ? AppTheme.darkSurface
+        : AppTheme.lightSurface,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => Padding(
+        padding: EdgeInsets.fromLTRB(
+            24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+                child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(3)))),
+            SizedBox(height: 24),
+            Text(item == null ? 'Add Grocery Item' : 'Edit Grocery Item',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            SizedBox(height: 24),
+            TextField(
+              controller: nameCtrl,
+              decoration: InputDecoration(
+                hintText: 'Item name',
+                filled: true,
+                fillColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkCard
+                    : AppTheme.lightCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'Quantity',
+                      filled: true,
+                      fillColor: Theme.of(context).brightness == Brightness.dark
+                          ? AppTheme.darkCard
+                          : AppTheme.lightCard,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppTheme.darkCard
+                          : AppTheme.lightCard,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: unit,
+                        isExpanded: true,
+                        items: ['pcs', 'kg', 'L', 'g', 'ml', 'dozen', 'pack']
+                            .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                            .toList(),
+                        onChanged: (v) => setState(() => unit = v!),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                onPressed: () {
+                  if (nameCtrl.text.isNotEmpty) {
+                    final newItem = GroceryItem(
+                      id: item?.id ?? '',
+                      name: nameCtrl.text,
+                      quantity: int.tryParse(qtyCtrl.text) ?? 1,
+                      unit: unit,
+                      isPurchased: item?.isPurchased ?? false,
+                      addedBy: item?.addedBy ?? 'User',
+                      category: item?.category ?? 'General',
+                    );
+                    if (item == null) {
+                      context.read<AppState>().addGroceryItem(newItem);
+                    } else {
+                      context.read<AppState>().updateGroceryItem(newItem);
+                    }
+                    Navigator.pop(ctx);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryDark,
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: Text(item == null ? 'Add Item' : 'Save Changes',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

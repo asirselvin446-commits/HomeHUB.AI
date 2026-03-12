@@ -24,7 +24,6 @@ class AppState extends ChangeNotifier {
   List<MaintenanceTask> _maintenanceTasks = [];
   List<HouseholdTask> _householdTasks = [];
   List<GroceryItem> _groceryItems = [];
-  List<PantryItem> _pantryItems = [];
   List<Expense> _expenses = [];
   List<Debt> _debts = [];
   List<SavingsGoal> _savingsGoals = [];
@@ -51,7 +50,6 @@ class AppState extends ChangeNotifier {
   List<MaintenanceTask> get maintenanceTasks => _maintenanceTasks;
   List<HouseholdTask> get householdTasks => _householdTasks;
   List<GroceryItem> get groceryItems => _groceryItems;
-  List<PantryItem> get pantryItems => _pantryItems;
   List<Expense> get expenses => _expenses;
   List<Debt> get debts => _debts;
   List<SavingsGoal> get savingsGoals => _savingsGoals;
@@ -67,8 +65,6 @@ class AppState extends ChangeNotifier {
       _householdTasks.where((t) => !t.isCompleted).toList();
   List<GroceryItem> get unpurchasedGroceries =>
       _groceryItems.where((g) => !g.isPurchased).toList();
-  List<PantryItem> get lowPantryItems =>
-      _pantryItems.where((p) => p.isLow).toList();
   List<UtilityBill> get unpaidBills =>
       _utilityBills.where((b) => !b.isPaid).toList();
 
@@ -85,7 +81,6 @@ class AppState extends ChangeNotifier {
   Map<String, double> get homeHealthScores => AIService.getHomeHealthScores(
         maintenanceTasks: _maintenanceTasks,
         householdTasks: _householdTasks,
-        pantryItems: _pantryItems,
         bills: _utilityBills,
       );
 
@@ -173,13 +168,6 @@ class AppState extends ChangeNotifier {
     );
 
     _subscriptions.add(
-      _firebase.streamPantryItems(_householdId!).listen((data) {
-        _pantryItems = data;
-        notifyListeners();
-      }),
-    );
-
-    _subscriptions.add(
       _firebase.streamExpenses(_householdId!).listen((data) {
         _expenses = data;
         notifyListeners();
@@ -235,7 +223,6 @@ class AppState extends ChangeNotifier {
     _maintenanceTasks = [];
     _householdTasks = [];
     _groceryItems = [];
-    _pantryItems = [];
     _expenses = [];
     _debts = [];
     _savingsGoals = [];
@@ -491,55 +478,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ============ PANTRY ITEMS ============
 
-  Future<void> addPantryItem(PantryItem item) async {
-    if (_householdId == null) return;
-    await _firebase.savePantryItem(_householdId!, item);
-  }
-
-  Future<void> updatePantryItem(PantryItem item) async {
-    if (_householdId == null) return;
-    await _firebase.savePantryItem(_householdId!, item);
-  }
-
-  Future<void> updatePantryQuantity(String id, double quantity) async {
-    if (_householdId == null) return;
-    final idx = _pantryItems.indexWhere((p) => p.id == id);
-    if (idx != -1) {
-      _pantryItems[idx].currentQuantity = quantity;
-      await _firebase.savePantryItem(_householdId!, _pantryItems[idx]);
-
-      // Auto-suggest for grocery if low
-      if (_pantryItems[idx].isLow) {
-        _autoSuggestGrocery(_pantryItems[idx]);
-      }
-    }
-  }
-
-  Future<void> deletePantryItem(String id) async {
-    if (_householdId == null) return;
-    await _firebase.deleteDocument(
-      householdId: _householdId!,
-      collection: 'pantryItems',
-      docId: id,
-    );
-  }
-
-  void _autoSuggestGrocery(PantryItem pantryItem) {
-    bool exists = _groceryItems.any(
-        (g) => g.name.toLowerCase() == pantryItem.name.toLowerCase() && !g.isPurchased);
-    if (!exists) {
-      addGroceryItem(GroceryItem(
-        id: '',
-        name: pantryItem.name,
-        category: pantryItem.category,
-        quantity: 1,
-        unit: pantryItem.unit,
-        addedBy: 'Smart Pantry',
-      ));
-    }
-  }
 
   // ============ EXPENSES ============
 
@@ -714,7 +653,6 @@ class AppState extends ChangeNotifier {
       maintenanceTasks: _maintenanceTasks,
       householdTasks: _householdTasks,
       groceryItems: _groceryItems,
-      pantryItems: _pantryItems,
       expenses: _expenses,
       debts: _debts,
       bills: _utilityBills,
@@ -777,18 +715,6 @@ class AppState extends ChangeNotifier {
       id: '', title: 'Grocery shopping', category: 'Shopping',
       dueDate: now.add(Duration(days: 1)), priority: 'medium',
     ));
-
-    // Pantry items
-    final pantryItems = [
-      PantryItem(id: '', name: 'Rice', category: 'Grains', currentQuantity: 2, minimumQuantity: 1, unit: 'kg'),
-      PantryItem(id: '', name: 'Milk', category: 'Dairy', currentQuantity: 0.5, minimumQuantity: 1, unit: 'L'),
-      PantryItem(id: '', name: 'Cooking Oil', category: 'Cooking', currentQuantity: 0.3, minimumQuantity: 0.5, unit: 'L'),
-      PantryItem(id: '', name: 'Sugar', category: 'Essentials', currentQuantity: 1.5, minimumQuantity: 0.5, unit: 'kg'),
-      PantryItem(id: '', name: 'Detergent', category: 'Cleaning', currentQuantity: 0.2, minimumQuantity: 0.5, unit: 'kg'),
-    ];
-    for (var item in pantryItems) {
-      await _firebase.savePantryItem(hid, item);
-    }
 
     // Expenses
     final expenseData = [

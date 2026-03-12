@@ -20,7 +20,6 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     'When should the AC be serviced?',
     'What\'s on the grocery list?',
     'Show me the home health score',
-    'What items are low in pantry?',
     'What\'s our debt status?',
     'Show unpaid bills',
   ];

@@ -142,8 +142,6 @@ class DashboardScreen extends StatelessWidget {
                                 SizedBox(width: 12),
                                 _miniScore('📋', scores['tasks']!),
                                 SizedBox(width: 12),
-                                _miniScore('📦', scores['pantry']!),
-                                SizedBox(width: 12),
                                 _miniScore('📄', scores['bills']!),
                               ],
                             ),
@@ -188,7 +186,6 @@ class DashboardScreen extends StatelessWidget {
                         value: '${state.unpurchasedGroceries.length}',
                         icon: Icons.shopping_cart_rounded,
                         color: AppTheme.accentOrange,
-                        subtitle: '${state.lowPantryItems.length} pantry items low',
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => GroceryScreen())),
                       ),
                       StatCard(

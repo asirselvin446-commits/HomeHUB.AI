@@ -302,34 +302,6 @@ class FirebaseService {
     ).map((docs) => docs.map((d) => GroceryItem.fromJson(d)).toList());
   }
 
-  // Pantry Items
-  Future<void> savePantryItem(
-      String householdId, PantryItem item) async {
-    final data = item.toJson();
-    if (item.id.isEmpty) {
-      final id = await addDocument(
-        householdId: householdId,
-        collection: 'pantryItems',
-        data: data,
-      );
-      item.id = id;
-    } else {
-      await updateDocument(
-        householdId: householdId,
-        collection: 'pantryItems',
-        docId: item.id,
-        data: data,
-      );
-    }
-  }
-
-  Stream<List<PantryItem>> streamPantryItems(String householdId) {
-    return streamDocuments(
-      householdId: householdId,
-      collection: 'pantryItems',
-    ).map((docs) => docs.map((d) => PantryItem.fromJson(d)).toList());
-  }
-
   // Expenses
   Future<void> saveExpense(String householdId, Expense expense) async {
     final data = expense.toJson();

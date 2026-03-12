@@ -172,46 +172,6 @@ class GroceryItem {
       );
 }
 
-class PantryItem {
-  String id;
-  String name;
-  String category;
-  double currentQuantity;
-  double minimumQuantity;
-  String unit;
-
-  PantryItem({
-    required this.id,
-    required this.name,
-    this.category = 'General',
-    this.currentQuantity = 0,
-    this.minimumQuantity = 1,
-    this.unit = 'kg',
-  });
-
-  bool get isLow => currentQuantity <= minimumQuantity;
-
-  double get stockPercentage =>
-      minimumQuantity > 0 ? (currentQuantity / (minimumQuantity * 3)).clamp(0, 1) : 1;
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'name': name,
-        'category': category,
-        'currentQuantity': currentQuantity,
-        'minimumQuantity': minimumQuantity,
-        'unit': unit,
-      };
-
-  factory PantryItem.fromJson(Map<String, dynamic> json) => PantryItem(
-        id: json['id'],
-        name: json['name'],
-        category: json['category'] ?? 'General',
-        currentQuantity: (json['currentQuantity'] ?? 0).toDouble(),
-        minimumQuantity: (json['minimumQuantity'] ?? 1).toDouble(),
-        unit: json['unit'] ?? 'kg',
-      );
-}
 
 class Expense {
   String id;

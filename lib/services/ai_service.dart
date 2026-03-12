@@ -172,7 +172,6 @@ class AIService {
   static Map<String, double> getHomeHealthScores({
     required List<MaintenanceTask> maintenanceTasks,
     required List<HouseholdTask> householdTasks,
-    required List<PantryItem> pantryItems,
     required List<UtilityBill> bills,
   }) {
     // Maintenance score
@@ -187,24 +186,17 @@ class AIService {
     double taskScore =
         totalTasks > 0 ? (completedTasks / totalTasks * 100) : 100;
 
-    // Pantry score
-    int totalPantry = pantryItems.length;
-    int lowPantry = pantryItems.where((p) => p.isLow).length;
-    double pantryScore =
-        totalPantry > 0 ? ((totalPantry - lowPantry) / totalPantry * 100) : 100;
-
     // Bills score
     int totalBills = bills.length;
     int overdueBills = bills.where((b) => b.isOverdue).length;
     double billScore =
         totalBills > 0 ? ((totalBills - overdueBills) / totalBills * 100) : 100;
 
-    double overallScore = (maintScore + taskScore + pantryScore + billScore) / 4;
+    double overallScore = (maintScore + taskScore + billScore) / 3;
 
     return {
       'maintenance': maintScore,
       'tasks': taskScore,
-      'pantry': pantryScore,
       'bills': billScore,
       'overall': overallScore,
     };
@@ -216,7 +208,6 @@ class AIService {
     required List<MaintenanceTask> maintenanceTasks,
     required List<HouseholdTask> householdTasks,
     required List<GroceryItem> groceryItems,
-    required List<PantryItem> pantryItems,
     required List<Expense> expenses,
     required List<Debt> debts,
     required List<UtilityBill> bills,
@@ -332,17 +323,6 @@ class AIService {
       return response;
     }
 
-    // Pantry / inventory
-    if (q.contains('pantry') || q.contains('inventory') || q.contains('stock') || q.contains('low')) {
-      final lowItems = pantryItems.where((p) => p.isLow).toList();
-      if (lowItems.isEmpty) return '✅ Your pantry is well stocked!';
-      String response = '📦 Low stock items:\n';
-      for (var p in lowItems) {
-        response += '• ${p.name}: ${p.currentQuantity} ${p.unit} (minimum: ${p.minimumQuantity} ${p.unit})\n';
-      }
-      return response;
-    }
-
     // Bills
     if (q.contains('bill')) {
       final unpaid = bills.where((b) => !b.isPaid).toList()
@@ -360,13 +340,11 @@ class AIService {
       final scores = getHomeHealthScores(
         maintenanceTasks: maintenanceTasks,
         householdTasks: householdTasks,
-        pantryItems: pantryItems,
         bills: bills,
       );
       return '🏠 Home Health Score: ${scores['overall']!.toInt()}/100\n\n'
           '🔧 Maintenance: ${scores['maintenance']!.toInt()}%\n'
           '📋 Tasks: ${scores['tasks']!.toInt()}%\n'
-          '📦 Pantry: ${scores['pantry']!.toInt()}%\n'
           '📄 Bills: ${scores['bills']!.toInt()}%';
     }
 
@@ -378,7 +356,6 @@ class AIService {
         '• "What\'s on the grocery list?"\n'
         '• "What\'s our debt status?"\n'
         '• "Show me the home health score"\n'
-        '• "What items are low in pantry?"\n'
         '• "Show unpaid bills"\n\n'
         'Try asking one of these questions!';
   }
