@@ -21,9 +21,9 @@ class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
+    AIAssistantScreen(),
     DashboardScreen(),
     TasksScreen(),
-    AIAssistantScreen(),
     GroceryScreen(),
     FinanceScreen(),
     MoreScreen(),
@@ -55,9 +55,9 @@ class _HomeShellState extends State<HomeShell> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _navItem(0, Icons.dashboard_rounded, 'Home', isDark),
-                _navItem(1, Icons.task_alt_rounded, 'Tasks', isDark),
-                _centerButton(isDark),
+                _aiAssistButton(isDark),
+                _navItem(1, Icons.dashboard_rounded, 'Home', isDark),
+                _navItem(2, Icons.task_alt_rounded, 'Tasks', isDark),
                 _navItem(3, Icons.shopping_cart_rounded, 'Grocery', isDark),
                 _navItem(4, Icons.account_balance_wallet_rounded, 'Finance', isDark),
                 _navItem(5, Icons.more_horiz_rounded, 'More', isDark),
@@ -113,10 +113,10 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  Widget _centerButton(bool isDark) {
-    final isSelected = _currentIndex == 2;
+  Widget _aiAssistButton(bool isDark) {
+    final isSelected = _currentIndex == 0;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = 2),
+      onTap: () => setState(() => _currentIndex = 0),
       child: Container(
         width: 56,
         height: 56,
