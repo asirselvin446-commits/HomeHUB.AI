@@ -9,12 +9,17 @@ import 'screens/auth_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'screens/home_shell.dart';
+import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize notifications
+  await NotificationService.instance.init();
+  await NotificationService.instance.requestPermission();
 
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
