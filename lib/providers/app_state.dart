@@ -642,8 +642,8 @@ class AppState extends ChangeNotifier {
     final userMsg = ChatMessage(id: '', text: text, isUser: true);
     await _firebase.saveChatMessage(_householdId!, userMsg);
 
-    // Process with AI (detects intent + builds human reply)
-    final result = AIService.processMessage(
+    // Process with AI — uses Gemini LLM when configured, falls back to regex
+    final result = await AIService.processMessageWithLLM(
       message: text,
       maintenanceTasks: _maintenanceTasks,
       householdTasks: _householdTasks,
@@ -692,6 +692,32 @@ class AppState extends ChangeNotifier {
         await addHouseholdTask(task);
         break;
 
+      case 'add_expense':
+        final expense = Expense(
+          id: '',
+          title: action.data['title'] ?? 'Misc Expense',
+          amount: (action.data['amount'] ?? 0).toDouble(),
+          category: action.data['category'] ?? 'Misc',
+          date: DateTime.now(),
+          paidBy: currentUser,
+        );
+        await addExpense(expense);
+        break;
+
+      case 'add_maintenance':
+        final task = MaintenanceTask(
+          id: '',
+          name: action.data['title'] ?? 'Maintenance',
+          category: action.data['category'] ?? 'General',
+          nextDue: action.data['nextDue'] != null
+              ? DateTime.parse(action.data['nextDue'])
+              : DateTime.now(),
+          recurringDays: 90,
+          assignedTo: currentUser,
+        );
+        await addMaintenanceTask(task);
+        break;
+
       case 'complete_grocery':
         await toggleGroceryItem(action.data['id']);
         break;
@@ -702,6 +728,21 @@ class AppState extends ChangeNotifier {
 
       case 'delete_grocery':
         await deleteGroceryItem(action.data['id']);
+        break;
+
+      case 'add_grocery_multi':
+        final items = action.data['items'] as List<dynamic>? ?? [];
+        for (var itemData in items) {
+          final item = GroceryItem(
+            id: '',
+            name: itemData['name'] ?? 'Item',
+            category: itemData['category'] ?? 'General',
+            quantity: itemData['quantity'] ?? 1,
+            unit: itemData['unit'] ?? 'pcs',
+            addedBy: currentUser,
+          );
+          await addGroceryItem(item);
+        }
         break;
     }
   }
