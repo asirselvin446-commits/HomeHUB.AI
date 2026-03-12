@@ -360,7 +360,10 @@ class _TasksScreenState extends State<TasksScreen> {
                       decoration: InputDecoration(hintText: 'Assign to'),
                       items: [
                         DropdownMenuItem(value: null, child: Text('Unassigned')),
-                        ...members.map((m) => m.name).toSet().map((name) =>
+                        ...<String>{
+                          if (assignedTo != null) assignedTo!,
+                          ...members.map((m) => m.name)
+                        }.map((name) =>
                             DropdownMenuItem(value: name, child: Text(name))),
                       ],
                       onChanged: (v) => setState(() => assignedTo = v),

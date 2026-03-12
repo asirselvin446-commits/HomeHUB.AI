@@ -1,37 +1,44 @@
 import '../models/models.dart';
 import 'package:intl/intl.dart';
+import 'llm_service.dart';
 
-// --- Action & Result Types ---
+// ═══════════════════════════════════════════════════════════════
+//  Action & Result Types
+// ═══════════════════════════════════════════════════════════════
 
 class AIAction {
-  final String type; // 'add_grocery', 'add_task', 'complete_grocery', 'complete_task', 'delete_grocery'
+  final String type;
   final Map<String, dynamic> data;
-
   const AIAction({required this.type, required this.data});
 }
 
 class AIResult {
   final String reply;
   final AIAction? action;
-
   const AIResult({required this.reply, this.action});
 }
 
-// --- Helpers ---
+// ═══════════════════════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════════════════════
 
-final _currencyFormat = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
+final _cur = NumberFormat.currency(symbol: '₹', decimalDigits: 0);
 
-String _pick(List<String> options) {
-  options.shuffle();
-  return options.first;
+String _pick(List<String> o) {
+  o.shuffle();
+  return o.first;
 }
 
-// -----------------------------------------------------------
-// Main public API
-// -----------------------------------------------------------
+String _titleCase(String s) {
+  if (s.isEmpty) return s;
+  return s.split(' ').map((w) => w.isEmpty ? w : w[0].toUpperCase() + w.substring(1)).join(' ');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Main Public API
+// ═══════════════════════════════════════════════════════════════
 
 class AIService {
-  /// Process a user message: detect intent, return a human reply + optional action.
   static AIResult processMessage({
     required String message,
     required List<MaintenanceTask> maintenanceTasks,
@@ -44,296 +51,546 @@ class AIService {
   }) {
     final q = message.trim().toLowerCase();
 
-    // --- ACTION: Add grocery ---
-    final addGrocery = _detectAddGrocery(q, message);
-    if (addGrocery != null) return addGrocery;
-
-    // --- ACTION: Mark grocery purchased ---
-    final buyGrocery = _detectBuyGrocery(q, groceryItems);
-    if (buyGrocery != null) return buyGrocery;
-
-    // --- ACTION: Remove grocery ---
-    final removeGrocery = _detectRemoveGrocery(q, groceryItems);
-    if (removeGrocery != null) return removeGrocery;
-
-    // --- ACTION: Add task ---
+    // ── 1. ACTION: Add Task ──
+    // Must be checked BEFORE grocery so "add home cleaning to tasks" works
     final addTask = _detectAddTask(q, message);
     if (addTask != null) return addTask;
 
-    // --- ACTION: Complete task ---
+    // ── 2. ACTION: Complete Task ──
     final completeTask = _detectCompleteTask(q, householdTasks);
     if (completeTask != null) return completeTask;
 
-    // --- QUERY: tasks due ---
-    if ((q.contains('task') || q.contains('to-do') || q.contains('todo')) &&
-        (q.contains('week') || q.contains('due') || q.contains('pending') || q.contains('what'))) {
-      return AIResult(reply: _queryTasksDue(householdTasks));
+    // ── 3. ACTION: Add Expense ──
+    final addExpense = _detectAddExpense(q, message);
+    if (addExpense != null) return addExpense;
+
+    // ── 4. ACTION: Add Grocery ──
+    final addGrocery = _detectAddGrocery(q, message);
+    if (addGrocery != null) return addGrocery;
+
+    // ── 5. ACTION: Mark Grocery Purchased ──
+    final buyGrocery = _detectBuyGrocery(q, groceryItems);
+    if (buyGrocery != null) return buyGrocery;
+
+    // ── 6. ACTION: Remove Grocery ──
+    final removeGrocery = _detectRemoveGrocery(q, groceryItems);
+    if (removeGrocery != null) return removeGrocery;
+
+    // ── 7. ACTION: Add Maintenance ──
+    final addMaint = _detectAddMaintenance(q, message);
+    if (addMaint != null) return addMaint;
+
+    // ── 8. QUERY: Tasks ──
+    if (_isTaskQuery(q)) {
+      return AIResult(reply: _queryTasks(householdTasks));
     }
 
-    // --- QUERY: grocery list ---
-    if (q.contains('grocery') || q.contains('groceries') || q.contains('shopping list')) {
-      if (q.contains('how many') || q.contains('count')) {
-        final n = groceryItems.where((g) => !g.isPurchased).length;
-        return AIResult(reply: _pick([
-          'You\'ve got $n items still to pick up from the store 🛒',
-          'There are $n things left on your grocery list right now.',
-          'Looks like $n items are waiting to be bought! 🛒',
-        ]));
-      }
+    // ── 9. QUERY: Grocery List ──
+    if (_isGroceryQuery(q)) {
       return AIResult(reply: _queryGroceries(groceryItems));
     }
 
-    // --- QUERY: spending / expenses ---
-    if (q.contains('spend') || q.contains('spent') || q.contains('expense') || q.contains('budget')) {
+    // ── 10. QUERY: Expenses ──
+    if (_isExpenseQuery(q)) {
       return AIResult(reply: _queryExpenses(expenses, monthlyIncome));
     }
 
-    // --- QUERY: maintenance / service ---
-    if (q.contains('maintenance') || q.contains('service') || q.contains('ac') ||
-        q.contains('plumb') || q.contains('electr') || q.contains('repair')) {
+    // ── 11. QUERY: Maintenance ──
+    if (_isMaintenanceQuery(q)) {
       return AIResult(reply: _queryMaintenance(q, maintenanceTasks));
     }
 
-    // --- QUERY: debt / loan ---
+    // ── 12. QUERY: Financial Insights ──
+    if (_isFinancialQuery(q)) {
+      return AIResult(reply: _queryFinancialInsights(expenses, debts, monthlyIncome));
+    }
+
+    // ── 13. QUERY: Debts ──
     if (q.contains('debt') || q.contains('loan') || q.contains('owe') || q.contains('borrow')) {
       return AIResult(reply: _queryDebts(debts));
     }
 
-    // --- QUERY: bills ---
-    if (q.contains('bill') || q.contains('utility') || q.contains('electricity') || q.contains('water')) {
+    // ── 14. QUERY: Bills ──
+    if (q.contains('bill') || q.contains('utility')) {
       return AIResult(reply: _queryBills(bills));
     }
 
-    // --- QUERY: health / score ---
-    if (q.contains('health') || q.contains('score') || q.contains('status') || q.contains('overview')) {
+    // ── 15. QUERY: Home Health ──
+    if (q.contains('health') || q.contains('score') || q.contains('overview')) {
       return AIResult(reply: _queryHealthScore(maintenanceTasks, householdTasks, bills));
     }
 
-    // --- QUERY: hello / greet ---
-    if (q.contains('hello') || q.contains('hi') || q.contains('hey') || q.contains('good morning') || q.contains('good evening')) {
+    // ── 16. QUERY: Smart Suggestions ──
+    if (q.contains('suggest') || q.contains('advice') || q.contains('recommend') || q.contains('tip')) {
+      return AIResult(reply: _smartSuggestions(groceryItems, maintenanceTasks, expenses, debts, monthlyIncome));
+    }
+
+    // ── 17. Greetings ──
+    if (q.contains('hello') || q.contains('hey') || q == 'hi' || q.startsWith('hi ') || q.contains('good morning') || q.contains('good evening')) {
       return AIResult(reply: _pick([
-        'Hey there! 👋 How can I help you today? I can add tasks, update your grocery list, or answer questions about your home.',
-        'Hi! Great to see you 😊 What can I help you with? I can manage tasks, groceries, check your bills — just ask!',
-        'Hello! I\'m here to help. Want me to add something to your list, or do you have a question?',
+        'Hey there! 👋 How can I help you manage your home today?',
+        'Hi! Ready to help. Try "Add task clean kitchen" or "What tasks are pending?"',
+        'Hello! I can add tasks, manage groceries, track expenses — just ask!',
       ]));
     }
 
-    // --- QUERY: help ---
-    if (q.contains('help') || q.contains('what can you') || q.contains('what do you')) {
+    // ── 18. Help ──
+    if (q.contains('help') || q.contains('what can you')) {
       return AIResult(reply: _helpMessage());
     }
 
-    // --- Default ---
+    // ── 19. Thank you ──
+    if (q.contains('thank') || q.contains('thanks')) {
+      return AIResult(reply: _pick([
+        'You\'re welcome! Let me know if you need anything else 😊',
+        'Happy to help! Just ask anytime.',
+        'Anytime! I\'m here whenever you need me 👍',
+      ]));
+    }
+
+    // ── Default ──
     return AIResult(reply: _pick([
-      'Hmm, I\'m not quite sure what you mean by that 🤔 Try saying something like "Add milk to groceries" or "What tasks are due?"',
-      'I didn\'t catch that — could you rephrase? You can ask me to add tasks, check groceries, or get a spending summary.',
-      'Not sure I understood that one! Try "Add task clean kitchen" or "What\'s on the grocery list?" and I\'ll get right on it.',
+      'I didn\'t fully understand that. You can ask me to add tasks, manage groceries, or check expenses.',
+      'Not sure I got that — try "Add task clean kitchen" or "How much did we spend?"',
+      'Could you rephrase? I can add tasks, track groceries, manage expenses, and more!',
     ]));
   }
 
-  // -----------------------------------------------------------
-  // Intent detectors
-  // -----------------------------------------------------------
+  // ═══════════════════════════════════════════════════════════════
+  //  LLM-POWERED PROCESSING (Gemini)
+  // ═══════════════════════════════════════════════════════════════
 
-  static final _qtyRegex = RegExp(r'\b(\d+)\s*(kg|g|grams?|litre?s?|l|ml|pcs?|pieces?|packets?|pkt|bottles?|boxes?|cans?|dozens?|doz|bunches?|bags?)?\b', caseSensitive: false);
-
-  static AIResult? _detectAddGrocery(String q, String original) {
-    // Patterns: "add X to grocery/list", "buy X", "get X from store", "pick up X", "need X"
-    final patterns = [
-      RegExp(r'add\s+(.+?)\s+(?:to\s+(?:the\s+)?(?:grocery|shopping|groceries|list))', caseSensitive: false),
-      RegExp(r'(?:buy|get|pick up|grab|purchase|order)\s+(?:some\s+)?(.+?)(?:\s+from\s+(?:the\s+)?(?:store|market|shop))?$', caseSensitive: false),
-      RegExp(r'(?:put|add)\s+(.+?)\s+(?:on|in)\s+(?:the\s+)?(?:grocery|shopping|list)', caseSensitive: false),
-      RegExp(r'(?:need|we need|i need)\s+(?:some\s+)?(.+?)(?:\s+from\s+(?:the\s+)?(?:store|market))?$', caseSensitive: false),
-      RegExp(r'(?:remind me to\s+)?(?:get|buy)\s+(.+)', caseSensitive: false),
-    ];
-
-    // Exclude if it looks like a task-add intent
-    if (q.contains('task') || q.contains('remind me to clean') || q.contains('remind me to pay') || q.contains('remind me to fix')) return null;
-
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(original);
-      if (match != null) {
-        String itemRaw = match.group(1)?.trim() ?? '';
-        if (itemRaw.isEmpty || itemRaw.length > 60) continue;
-
-        // Parse quantity
-        int qty = 1;
-        String unit = 'pcs';
-        final qtyMatch = _qtyRegex.firstMatch(itemRaw);
-        if (qtyMatch != null) {
-          final numStr = qtyMatch.group(1);
-          final unitStr = qtyMatch.group(2);
-          if (numStr != null) qty = int.tryParse(numStr) ?? 1;
-          if (unitStr != null && unitStr.isNotEmpty) {
-            unit = unitStr.toLowerCase();
-            itemRaw = itemRaw.replaceAll(qtyMatch.group(0) ?? '', '').trim();
-          }
-        }
-
-        // Clean filler words
-        String itemName = itemRaw
-            .replaceAll(RegExp(r'^(some|a|an|the)\s+', caseSensitive: false), '')
-            .trim();
-        itemName = _toTitleCase(itemName);
-
-        if (itemName.isEmpty || itemName.length > 50) continue;
-
-        final reply = _pick([
-          'Sure! I\'ve added **$itemName** to your grocery list 🛒',
-          'Done! **$itemName** is now on the shopping list ✅',
-          'Got it — **$itemName** has been added to your groceries 🛒',
-          'Added **$itemName** to the list! Anything else you need?',
-        ]);
-
-        return AIResult(
-          reply: reply,
-          action: AIAction(type: 'add_grocery', data: {
-            'name': itemName,
-            'quantity': qty,
-            'unit': unit,
-            'category': 'General',
-          }),
-        );
-      }
-    }
-    return null;
-  }
-
-  static AIResult? _detectBuyGrocery(String q, List<GroceryItem> groceryItems) {
-    // "mark milk as bought/purchased", "I bought eggs", "got eggs", "picked up milk"
-    final patterns = [
-      RegExp(r'(?:mark|set)\s+(.+?)\s+as\s+(?:bought|purchased|done|got|gotten)', caseSensitive: false),
-      RegExp(r'(?:i\s+)?(?:bought|purchased|got|picked up|grabbed)\s+(?:the\s+)?(.+)', caseSensitive: false),
-    ];
-
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(q);
-      if (match != null) {
-        final keyword = match.group(1)?.trim().toLowerCase() ?? '';
-        if (keyword.isEmpty) continue;
-        final item = groceryItems.firstWhere(
-          (g) => !g.isPurchased && g.name.toLowerCase().contains(keyword),
-          orElse: () => GroceryItem(id: '', name: ''),
-        );
-        if (item.id.isNotEmpty) {
-          final reply = _pick([
-            'Perfect! I\'ve marked **${item.name}** as purchased ✅',
-            'Done! **${item.name}** is checked off your grocery list 🎉',
-            'Got it — **${item.name}** is marked as bought!',
-          ]);
-          return AIResult(
-            reply: reply,
-            action: AIAction(type: 'complete_grocery', data: {'id': item.id}),
-          );
-        } else {
-          return AIResult(reply: 'Hmm, I couldn\'t find "$keyword" on your grocery list. Maybe it\'s already purchased or spelled differently?');
-        }
-      }
-    }
-    return null;
-  }
-
-  static AIResult? _detectRemoveGrocery(String q, List<GroceryItem> groceryItems) {
-    // "remove milk from list", "delete eggs from groceries"
-    final pattern = RegExp(r'(?:remove|delete|cancel)\s+(.+?)\s+(?:from\s+(?:the\s+)?(?:grocery|shopping|list|groceries))', caseSensitive: false);
-    final match = pattern.firstMatch(q);
-    if (match != null) {
-      final keyword = match.group(1)?.trim().toLowerCase() ?? '';
-      if (keyword.isEmpty) return null;
-      final item = groceryItems.firstWhere(
-        (g) => g.name.toLowerCase().contains(keyword),
-        orElse: () => GroceryItem(id: '', name: ''),
+  /// Sends the message to Gemini LLM for intent classification.
+  /// Falls back to the regex-based [processMessage] on any error.
+  static Future<AIResult> processMessageWithLLM({
+    required String message,
+    required List<MaintenanceTask> maintenanceTasks,
+    required List<HouseholdTask> householdTasks,
+    required List<GroceryItem> groceryItems,
+    required List<Expense> expenses,
+    required List<Debt> debts,
+    required List<UtilityBill> bills,
+    required double monthlyIncome,
+  }) async {
+    // If LLM is not configured, use the regex engine directly
+    if (!LLMService.isConfigured) {
+      return processMessage(
+        message: message,
+        maintenanceTasks: maintenanceTasks,
+        householdTasks: householdTasks,
+        groceryItems: groceryItems,
+        expenses: expenses,
+        debts: debts,
+        bills: bills,
+        monthlyIncome: monthlyIncome,
       );
-      if (item.id.isNotEmpty) {
-        final reply = _pick([
-          'Okay! I\'ve removed **${item.name}** from your grocery list.',
-          'Done — **${item.name}** has been removed from the shopping list.',
-        ]);
-        return AIResult(
-          reply: reply,
-          action: AIAction(type: 'delete_grocery', data: {'id': item.id}),
-        );
-      } else {
-        return AIResult(reply: 'I couldn\'t find "$keyword" on your grocery list. It might already be removed!');
-      }
     }
-    return null;
+
+    try {
+      final json = await LLMService.sendMessage(message);
+      final intent = json['intent'] as String? ?? '';
+
+      switch (intent) {
+        case 'create_task':
+          final title = _titleCase(json['task_title'] ?? 'New Task');
+          final priority = json['priority'] ?? 'medium';
+          final category = json['category'] ?? 'General';
+          DateTime? due;
+          final dueStr = json['due_date']?.toString().toLowerCase();
+          if (dueStr == 'today') due = DateTime.now();
+          else if (dueStr == 'tomorrow') due = DateTime.now().add(const Duration(days: 1));
+          else if (dueStr == 'next week') due = DateTime.now().add(const Duration(days: 7));
+
+          final dateStr = due != null ? ' for **${DateFormat('MMM dd').format(due)}**' : '';
+          return AIResult(
+            reply: 'Task added successfully: **$title**$dateStr ✅',
+            action: AIAction(type: 'add_task', data: {
+              'title': title,
+              'category': category,
+              'priority': priority,
+              'dueDate': due?.toIso8601String(),
+            }),
+          );
+
+        case 'complete_task':
+          final keyword = (json['task_title'] ?? '').toString().toLowerCase();
+          final task = householdTasks.firstWhere(
+            (t) => !t.isCompleted && t.title.toLowerCase().contains(keyword),
+            orElse: () => HouseholdTask(id: '', title: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: 'Task marked as completed: **${task.title}** ✅',
+              action: AIAction(type: 'complete_task', data: {'id': task.id}),
+            );
+          }
+          return AIResult(reply: 'No pending task found matching "${json['task_title']}". Try "What tasks are pending?" to see your list.');
+
+        case 'add_grocery':
+          final items = json['items'] as List<dynamic>? ?? [];
+          if (items.isEmpty) {
+            // Fallback: check if there's a single "item" field
+            final singleItem = json['item']?.toString();
+            if (singleItem != null && singleItem.isNotEmpty) {
+              final name = _titleCase(singleItem);
+              return AIResult(
+                reply: '**$name** added to your grocery list 🛒',
+                action: AIAction(type: 'add_grocery', data: {
+                  'name': name, 'quantity': 1, 'unit': 'pcs', 'category': 'General',
+                }),
+              );
+            }
+            return AIResult(reply: 'Could not determine the grocery item. Try "add milk to grocery list".');
+          }
+
+          if (items.length == 1) {
+            final item = items[0] as Map<String, dynamic>;
+            final name = _titleCase(item['name'] ?? 'Item');
+            return AIResult(
+              reply: '**$name** added to your grocery list 🛒',
+              action: AIAction(type: 'add_grocery', data: {
+                'name': name,
+                'quantity': item['quantity'] ?? 1,
+                'unit': item['unit'] ?? 'pcs',
+                'category': 'General',
+              }),
+            );
+          }
+
+          // Multiple items
+          final names = items.map((i) => _titleCase((i as Map<String, dynamic>)['name'] ?? 'Item')).toList();
+          final parsedItems = items.map((i) {
+            final m = i as Map<String, dynamic>;
+            return {
+              'name': _titleCase(m['name'] ?? 'Item'),
+              'quantity': m['quantity'] ?? 1,
+              'unit': m['unit'] ?? 'pcs',
+              'category': 'General',
+            };
+          }).toList();
+          return AIResult(
+            reply: 'Added ${names.length} items to your grocery list: **${names.join(', ')}** 🛒',
+            action: AIAction(type: 'add_grocery_multi', data: {'items': parsedItems}),
+          );
+
+        case 'remove_grocery':
+          final kw = (json['item'] ?? '').toString().toLowerCase();
+          final item = groceryItems.firstWhere(
+            (g) => g.name.toLowerCase().contains(kw),
+            orElse: () => GroceryItem(id: '', name: ''),
+          );
+          if (item.id.isNotEmpty) {
+            return AIResult(
+              reply: 'Grocery item removed: **${item.name}** 🗑️',
+              action: AIAction(type: 'delete_grocery', data: {'id': item.id}),
+            );
+          }
+          return AIResult(reply: '"$kw" not found on your grocery list.');
+
+        case 'add_expense':
+          final title = _titleCase(json['title'] ?? 'Misc');
+          final amount = (json['amount'] ?? 0).toDouble();
+          final category = json['category'] ?? 'Misc';
+          if (amount <= 0) {
+            return AIResult(reply: 'Could not determine the amount. Try "spent 500 on groceries".');
+          }
+          return AIResult(
+            reply: 'Expense recorded: **$title** — ${_cur.format(amount)} 💸',
+            action: AIAction(type: 'add_expense', data: {
+              'title': title, 'amount': amount, 'category': category,
+            }),
+          );
+
+        case 'show_finance_summary':
+          return AIResult(reply: _queryExpenses(expenses, monthlyIncome));
+
+        case 'general_query':
+          final queryType = json['query_type'] ?? 'other';
+          switch (queryType) {
+            case 'tasks':
+              return AIResult(reply: _queryTasks(householdTasks));
+            case 'groceries':
+              return AIResult(reply: _queryGroceries(groceryItems));
+            case 'expenses':
+              return AIResult(reply: _queryExpenses(expenses, monthlyIncome));
+            case 'maintenance':
+              return AIResult(reply: _queryMaintenance(message.toLowerCase(), maintenanceTasks));
+            case 'bills':
+              return AIResult(reply: _queryBills(bills));
+            case 'debts':
+              return AIResult(reply: _queryDebts(debts));
+            case 'health_score':
+              return AIResult(reply: _queryHealthScore(maintenanceTasks, householdTasks, bills));
+            case 'suggestions':
+              return AIResult(reply: _smartSuggestions(groceryItems, maintenanceTasks, expenses, debts, monthlyIncome));
+            case 'financial_insights':
+              return AIResult(reply: _queryFinancialInsights(expenses, debts, monthlyIncome));
+            case 'greeting':
+              return AIResult(reply: _pick([
+                'Hey there! 👋 How can I help you manage your home today?',
+                'Hi! Ready to help. Try "Add task clean kitchen" or "What tasks are pending?"',
+                'Hello! I can add tasks, manage groceries, track expenses — just ask!',
+              ]));
+            case 'help':
+              return AIResult(reply: _helpMessage());
+            case 'thanks':
+              return AIResult(reply: _pick([
+                'You\'re welcome! Let me know if you need anything else 😊',
+                'Happy to help! Just ask anytime.',
+                'Anytime! I\'m here whenever you need me 👍',
+              ]));
+            default:
+              return AIResult(reply: _helpMessage());
+          }
+
+        default:
+          // Unknown intent from LLM — fall back to regex
+          return processMessage(
+            message: message,
+            maintenanceTasks: maintenanceTasks,
+            householdTasks: householdTasks,
+            groceryItems: groceryItems,
+            expenses: expenses,
+            debts: debts,
+            bills: bills,
+            monthlyIncome: monthlyIncome,
+          );
+      }
+    } catch (e) {
+      // LLM failed — fall back to the regex engine
+      return processMessage(
+        message: message,
+        maintenanceTasks: maintenanceTasks,
+        householdTasks: householdTasks,
+        groceryItems: groceryItems,
+        expenses: expenses,
+        debts: debts,
+        bills: bills,
+        monthlyIncome: monthlyIncome,
+      );
+    }
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Add Task
+  // ═══════════════════════════════════════════════════════════════
 
   static AIResult? _detectAddTask(String q, String original) {
-    // "add task X", "create task X", "remind me to X", "add a task to X"
     final patterns = [
+      // "add home cleaning to tasks"
+      RegExp(r'add\s+(.+?)\s+to\s+(?:my\s+)?(?:task|tasks|to-?do)', caseSensitive: false),
+      // "add task clean kitchen tomorrow"
       RegExp(r'(?:add|create|new)\s+(?:a\s+)?task\s+(?:to\s+)?(.+)', caseSensitive: false),
+      // "remind me to pay rent tomorrow"
       RegExp(r'remind\s+me\s+to\s+(.+)', caseSensitive: false),
+      // "schedule a reminder for X"
       RegExp(r'(?:schedule|set up|create)\s+(?:a\s+)?(?:reminder|todo)\s+(?:for\s+)?(.+)', caseSensitive: false),
     ];
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(original);
-      if (match != null) {
-        String taskRaw = match.group(1)?.trim() ?? '';
-        if (taskRaw.isEmpty || taskRaw.length > 100) continue;
+    for (final p in patterns) {
+      final m = p.firstMatch(original);
+      if (m == null) continue;
+      String raw = m.group(1)?.trim() ?? '';
+      if (raw.isEmpty || raw.length > 100) continue;
 
-        // Parse due date hints
-        DateTime? dueDate;
-        String priority = 'medium';
+      // Parse due date
+      DateTime? due;
+      if (raw.toLowerCase().contains('today')) {
+        due = DateTime.now();
+        raw = raw.replaceAll(RegExp(r'\s*today\s*', caseSensitive: false), ' ').trim();
+      } else if (raw.toLowerCase().contains('tomorrow')) {
+        due = DateTime.now().add(const Duration(days: 1));
+        raw = raw.replaceAll(RegExp(r'\s*tomorrow\s*', caseSensitive: false), ' ').trim();
+      } else if (raw.toLowerCase().contains('next week')) {
+        due = DateTime.now().add(const Duration(days: 7));
+        raw = raw.replaceAll(RegExp(r'\s*next week\s*', caseSensitive: false), ' ').trim();
+      } else if (raw.toLowerCase().contains('this week')) {
+        due = DateTime.now().add(const Duration(days: 5));
+        raw = raw.replaceAll(RegExp(r'\s*this week\s*', caseSensitive: false), ' ').trim();
+      }
 
-        if (taskRaw.contains('today')) {
-          dueDate = DateTime.now();
-          taskRaw = taskRaw.replaceAll(RegExp(r'\s*today\s*', caseSensitive: false), ' ').trim();
-        } else if (taskRaw.contains('tomorrow')) {
-          dueDate = DateTime.now().add(const Duration(days: 1));
-          taskRaw = taskRaw.replaceAll(RegExp(r'\s*tomorrow\s*', caseSensitive: false), ' ').trim();
-        } else if (taskRaw.contains('next week')) {
-          dueDate = DateTime.now().add(const Duration(days: 7));
-          taskRaw = taskRaw.replaceAll(RegExp(r'\s*next week\s*', caseSensitive: false), ' ').trim();
-        } else if (taskRaw.contains('this week')) {
-          dueDate = DateTime.now().add(const Duration(days: 5));
-          taskRaw = taskRaw.replaceAll(RegExp(r'\s*this week\s*', caseSensitive: false), ' ').trim();
-        }
+      // Priority
+      String priority = 'medium';
+      if (raw.toLowerCase().contains('urgent') || raw.toLowerCase().contains('asap') || raw.toLowerCase().contains('important')) {
+        priority = 'high';
+        raw = raw.replaceAll(RegExp(r'\s*(urgent|asap|important)\s*', caseSensitive: false), ' ').trim();
+      }
 
-        // Parse priority hints
-        if (taskRaw.contains('urgent') || taskRaw.contains('asap') || taskRaw.contains('important') || taskRaw.contains('critical')) {
-          priority = 'high';
-        }
+      // Category
+      String cat = 'General';
+      final rl = raw.toLowerCase();
+      if (rl.contains('clean') || rl.contains('mop') || rl.contains('vacuum') || rl.contains('wash')) cat = 'Cleaning';
+      else if (rl.contains('pay') || rl.contains('bill') || rl.contains('bank')) cat = 'Bills';
+      else if (rl.contains('buy') || rl.contains('shop') || rl.contains('grocery')) cat = 'Shopping';
+      else if (rl.contains('fix') || rl.contains('repair') || rl.contains('service')) cat = 'Maintenance';
+      else if (rl.contains('cook') || rl.contains('meal') || rl.contains('food')) cat = 'Cooking';
 
-        // Detect category
-        String category = 'General';
-        if (taskRaw.contains('clean') || taskRaw.contains('mop') || taskRaw.contains('vacuum') || taskRaw.contains('wash')) {
-          category = 'Cleaning';
-        } else if (taskRaw.contains('pay') || taskRaw.contains('bill') || taskRaw.contains('bank')) {
-          category = 'Bills';
-        } else if (taskRaw.contains('buy') || taskRaw.contains('shop') || taskRaw.contains('grocery')) {
-          category = 'Shopping';
-        } else if (taskRaw.contains('fix') || taskRaw.contains('repair') || taskRaw.contains('service')) {
-          category = 'Maintenance';
-        } else if (taskRaw.contains('cook') || taskRaw.contains('meal') || taskRaw.contains('food')) {
-          category = 'Cooking';
-        }
+      raw = raw.replaceAll(RegExp(r'\s+'), ' ').replaceAll(RegExp(r'[.!?]+$'), '').trim();
+      final title = _titleCase(raw);
+      if (title.isEmpty) continue;
 
-        // Clean trailing punctuation / filler
-        taskRaw = taskRaw.replaceAll(RegExp(r'\s+'), ' ').trim();
-        taskRaw = taskRaw.replaceAll(RegExp(r'[.!?]+$'), '').trim();
-        final taskTitle = _toTitleCase(taskRaw);
+      final dateStr = due != null ? ' for **${DateFormat('MMM dd').format(due)}**' : '';
+      return AIResult(
+        reply: 'Task added successfully: **$title**$dateStr ✅',
+        action: AIAction(type: 'add_task', data: {
+          'title': title,
+          'category': cat,
+          'priority': priority,
+          'dueDate': due?.toIso8601String(),
+        }),
+      );
+    }
+    return null;
+  }
 
-        if (taskTitle.isEmpty) continue;
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Complete Task
+  // ═══════════════════════════════════════════════════════════════
 
-        final dueDateStr = dueDate != null
-            ? ' for ${DateFormat('MMM dd').format(dueDate)}'
-            : '';
-        final reply = _pick([
-          'Got it! I\'ve added **"$taskTitle"** to your task list$dueDateStr ✅',
-          'Done! **"$taskTitle"** has been added as a task$dueDateStr 📋',
-          'Sure thing! **"$taskTitle"** is now on your task list$dueDateStr.',
-        ]);
+  static AIResult? _detectCompleteTask(String q, List<HouseholdTask> tasks) {
+    final patterns = [
+      RegExp(r'(?:mark|set|complete|finish)\s+(?:task\s+)?(.+?)\s+(?:as\s+)?(?:done|complete|finished)', caseSensitive: false),
+      RegExp(r'(?:done|finished)\s+(?:with\s+)?(?:the\s+)?(?:task\s+)?(.+)', caseSensitive: false),
+      RegExp(r'(?:complete|finish)\s+(?:task\s+)?(.+)', caseSensitive: false),
+    ];
 
+    for (final p in patterns) {
+      final m = p.firstMatch(q);
+      if (m == null) continue;
+      final keyword = m.group(1)?.trim().toLowerCase() ?? '';
+      if (keyword.isEmpty) continue;
+
+      final task = tasks.firstWhere(
+        (t) => !t.isCompleted && t.title.toLowerCase().contains(keyword),
+        orElse: () => HouseholdTask(id: '', title: '', category: ''),
+      );
+
+      if (task.id.isNotEmpty) {
+        return AIResult(
+          reply: 'Marked as done: **${task.title}** ✅',
+          action: AIAction(type: 'complete_task', data: {'id': task.id}),
+        );
+      } else {
+        return AIResult(reply: 'No pending task found matching "$keyword".');
+      }
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Add Expense
+  // ═══════════════════════════════════════════════════════════════
+
+  static AIResult? _detectAddExpense(String q, String original) {
+    final patterns = [
+      // "spent 500 on groceries" / "paid 1200 for electricity"
+      RegExp(r'(?:spent|paid|cost)\s+(?:rs\.?\s*|₹\s*)?(\d+(?:\.\d+)?)\s+(?:on|for)\s+(.+)', caseSensitive: false),
+      // "add electricity bill 1200" / "add expense groceries 500"
+      RegExp(r'(?:add|record|log)\s+(?:expense\s+)?(.+?)\s+(?:rs\.?\s*|₹\s*)?(\d+(?:\.\d+)?)(?:\s*(?:rupees|rs|bucks)?)?$', caseSensitive: false),
+      // "electricity bill 1200 rupees"
+      RegExp(r'(.+?)\s+(?:rs\.?\s*|₹\s*)?(\d+(?:\.\d+)?)\s*(?:rupees|rs)?$', caseSensitive: false),
+    ];
+
+    // Must contain a number to be an expense intent
+    if (!RegExp(r'\d').hasMatch(q)) return null;
+    // Exclude if it's clearly a task or grocery intent
+    if (q.contains('task') || q.contains('grocery') || q.contains('groceries')) return null;
+
+    for (final p in patterns) {
+      final m = p.firstMatch(original);
+      if (m == null) continue;
+
+      String amountStr;
+      String titleRaw;
+
+      if (q.startsWith('spent') || q.startsWith('paid') || q.startsWith('cost')) {
+        amountStr = m.group(1) ?? '0';
+        titleRaw = m.group(2) ?? '';
+      } else {
+        titleRaw = m.group(1) ?? '';
+        amountStr = m.group(2) ?? '0';
+      }
+
+      double amount = double.tryParse(amountStr) ?? 0;
+      if (amount <= 0) continue;
+
+      titleRaw = titleRaw.replaceAll(RegExp(r'(rupees|rs\.?|₹|dollars|\$|bucks)', caseSensitive: false), '').trim();
+      if (titleRaw.isEmpty) titleRaw = 'Misc';
+
+      // Clean filler
+      titleRaw = titleRaw.replaceAll(RegExp(r'^(add|record|log|an?\s+|expense\s+)', caseSensitive: false), '').trim();
+      if (titleRaw.isEmpty) titleRaw = 'Misc';
+
+      String cat = 'Misc';
+      final tl = titleRaw.toLowerCase();
+      if (tl.contains('grocer') || tl.contains('food') || tl.contains('meal') || tl.contains('vegetable')) cat = 'Food';
+      else if (tl.contains('bill') || tl.contains('electric') || tl.contains('water') || tl.contains('rent') || tl.contains('gas')) cat = 'Bills';
+      else if (tl.contains('petrol') || tl.contains('diesel') || tl.contains('travel') || tl.contains('uber') || tl.contains('cab')) cat = 'Transport';
+      else if (tl.contains('medicine') || tl.contains('doctor') || tl.contains('hospital')) cat = 'Health';
+      else if (tl.contains('shop') || tl.contains('cloth') || tl.contains('amazon') || tl.contains('flipkart')) cat = 'Shopping';
+
+      final title = _titleCase(titleRaw);
+
+      return AIResult(
+        reply: 'Expense recorded: **$title** — ${_cur.format(amount)} 💸',
+        action: AIAction(type: 'add_expense', data: {
+          'title': title,
+          'amount': amount,
+          'category': cat,
+        }),
+      );
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Add Grocery
+  // ═══════════════════════════════════════════════════════════════
+
+  static final _qtyRx = RegExp(r'\b(\d+)\s*(kg|g|grams?|litre?s?|l|ml|pcs?|pieces?|packets?|pkt|bottles?|boxes?|cans?|dozens?|doz|bunches?|bags?)?\b', caseSensitive: false);
+
+  static AIResult? _detectAddGrocery(String q, String original) {
+    final patterns = [
+      RegExp(r'add\s+(.+?)\s+(?:to\s+(?:the\s+)?(?:grocery|shopping|groceries|list))', caseSensitive: false),
+      RegExp(r'(?:put|add)\s+(.+?)\s+(?:on|in)\s+(?:the\s+)?(?:grocery|shopping|list)', caseSensitive: false),
+      RegExp(r'(?:buy|get|pick up|grab|purchase|order)\s+(?:some\s+)?(.+?)(?:\s+from\s+(?:the\s+)?(?:store|market|shop))?$', caseSensitive: false),
+      RegExp(r'(?:need|we need|i need)\s+(?:some\s+)?(.+?)$', caseSensitive: false),
+    ];
+
+    // Exclude if clearly a task/expense/maintenance intent
+    if (q.contains('task') || q.contains('remind me to clean') || q.contains('remind me to pay') || q.contains('remind me to fix')) return null;
+    if (RegExp(r'\d{3,}').hasMatch(q)) return null; // large numbers = likely expense
+
+    for (final p in patterns) {
+      final m = p.firstMatch(original);
+      if (m == null) continue;
+      String raw = m.group(1)?.trim() ?? '';
+      if (raw.isEmpty || raw.length > 60) continue;
+
+      // Multi-item: "milk and eggs" / "milk, eggs, bread"
+      List<String> items = [];
+      if (raw.contains(' and ') || raw.contains(',')) {
+        items = raw.split(RegExp(r'\s+and\s+|,\s*')).map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      } else {
+        items = [raw];
+      }
+
+      if (items.length == 1) {
+        // Single item
+        final parsed = _parseGroceryItem(items[0]);
+        return AIResult(
+          reply: '**${parsed['name']}** added to your grocery list 🛒',
+          action: AIAction(type: 'add_grocery', data: parsed),
+        );
+      } else {
+        // Multiple items — return first item action, mention all in reply
+        final names = items.map((i) => _titleCase(i.replaceAll(RegExp(r'^(some|a|an|the)\s+', caseSensitive: false), '').trim())).toList();
+        final parsed = _parseGroceryItem(items[0]);
+        String reply = 'Added ${names.length} items to your grocery list: **${names.join(', ')}** 🛒';
         return AIResult(
           reply: reply,
-          action: AIAction(type: 'add_task', data: {
-            'title': taskTitle,
-            'category': category,
-            'priority': priority,
-            'dueDate': dueDate?.toIso8601String(),
+          action: AIAction(type: 'add_grocery_multi', data: {
+            'items': items.map((i) => _parseGroceryItem(i)).toList(),
           }),
         );
       }
@@ -341,264 +598,430 @@ class AIService {
     return null;
   }
 
-  static AIResult? _detectCompleteTask(String q, List<HouseholdTask> tasks) {
-    // "mark task clean kitchen as done", "complete task pay bills", "done with clean kitchen"
+  static Map<String, dynamic> _parseGroceryItem(String raw) {
+    int qty = 1;
+    String unit = 'pcs';
+    final qm = _qtyRx.firstMatch(raw);
+    if (qm != null) {
+      qty = int.tryParse(qm.group(1) ?? '') ?? 1;
+      if (qm.group(2) != null && qm.group(2)!.isNotEmpty) {
+        unit = qm.group(2)!.toLowerCase();
+        raw = raw.replaceAll(qm.group(0) ?? '', '').trim();
+      }
+    }
+    String name = raw.replaceAll(RegExp(r'^(some|a|an|the)\s+', caseSensitive: false), '').trim();
+    name = _titleCase(name);
+    if (name.isEmpty) name = 'Item';
+    return {'name': name, 'quantity': qty, 'unit': unit, 'category': 'General'};
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Mark Grocery Purchased
+  // ═══════════════════════════════════════════════════════════════
+
+  static AIResult? _detectBuyGrocery(String q, List<GroceryItem> items) {
     final patterns = [
-      RegExp(r'(?:mark|set|complete|finish)\s+(?:task\s+)?(.+?)\s+(?:as\s+)?(?:done|complete|finished|completed)', caseSensitive: false),
-      RegExp(r'(?:done|finished)\s+(?:with\s+)?(?:the\s+)?task\s+(.+)', caseSensitive: false),
+      RegExp(r'(?:mark|set)\s+(.+?)\s+as\s+(?:bought|purchased|done)', caseSensitive: false),
+      RegExp(r'(?:i\s+)?(?:bought|purchased|got|picked up)\s+(?:the\s+)?(.+)', caseSensitive: false),
     ];
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(q);
-      if (match != null) {
-        final keyword = match.group(1)?.trim().toLowerCase() ?? '';
-        if (keyword.isEmpty) continue;
-        final task = tasks.firstWhere(
-          (t) => !t.isCompleted && t.title.toLowerCase().contains(keyword),
-          orElse: () => HouseholdTask(id: '', title: '', category: ''),
+    for (final p in patterns) {
+      final m = p.firstMatch(q);
+      if (m == null) continue;
+      final kw = m.group(1)?.trim().toLowerCase() ?? '';
+      if (kw.isEmpty) continue;
+
+      final item = items.firstWhere(
+        (g) => !g.isPurchased && g.name.toLowerCase().contains(kw),
+        orElse: () => GroceryItem(id: '', name: ''),
+      );
+
+      if (item.id.isNotEmpty) {
+        return AIResult(
+          reply: '**${item.name}** marked as purchased ✅',
+          action: AIAction(type: 'complete_grocery', data: {'id': item.id}),
         );
-        if (task.id.isNotEmpty) {
-          final reply = _pick([
-            'Awesome! I\'ve marked **"${task.title}"** as done 🎉',
-            'Nice work! **"${task.title}"** is now complete ✅',
-            'Done! **"${task.title}"** has been checked off your list.',
-          ]);
-          return AIResult(
-            reply: reply,
-            action: AIAction(type: 'complete_task', data: {'id': task.id}),
-          );
-        } else {
-          return AIResult(reply: 'I couldn\'t find a pending task matching "$keyword". Could you check the task name in the Tasks screen?');
-        }
+      } else {
+        return AIResult(reply: 'Could not find "$kw" on your grocery list.');
       }
     }
     return null;
   }
 
-  // -----------------------------------------------------------
-  // Query builders
-  // -----------------------------------------------------------
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Remove Grocery
+  // ═══════════════════════════════════════════════════════════════
 
-  static String _queryTasksDue(List<HouseholdTask> tasks) {
-    final now = DateTime.now();
-    final weekEnd = now.add(const Duration(days: 7));
-    final dueTasks = tasks
-        .where((t) => !t.isCompleted && t.dueDate != null && t.dueDate!.isBefore(weekEnd))
-        .toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+  static AIResult? _detectRemoveGrocery(String q, List<GroceryItem> items) {
+    final p = RegExp(r'(?:remove|delete|cancel)\s+(.+?)\s+(?:from\s+(?:the\s+)?(?:grocery|shopping|list|groceries))', caseSensitive: false);
+    final m = p.firstMatch(q);
+    if (m == null) return null;
 
-    if (dueTasks.isEmpty) {
-      return _pick([
-        'All clear! No tasks due this week — you\'re on top of things 🎉',
-        'You\'re all caught up! Nothing is due in the next 7 days.',
-        'Looking good! No pending tasks for this week 😊',
-      ]);
+    final kw = m.group(1)?.trim().toLowerCase() ?? '';
+    if (kw.isEmpty) return null;
+
+    final item = items.firstWhere(
+      (g) => g.name.toLowerCase().contains(kw),
+      orElse: () => GroceryItem(id: '', name: ''),
+    );
+
+    if (item.id.isNotEmpty) {
+      return AIResult(
+        reply: '**${item.name}** removed from grocery list.',
+        action: AIAction(type: 'delete_grocery', data: {'id': item.id}),
+      );
     }
-
-    final intro = _pick([
-      'Here\'s what\'s on the agenda this week:',
-      'These tasks need your attention in the next 7 days:',
-      'Coming up this week — don\'t forget these:',
-    ]);
-
-    String response = '$intro\n\n';
-    for (var t in dueTasks) {
-      final overdue = t.isOverdue ? ' ⚠️ OVERDUE' : '';
-      response += '• ${t.title}${t.assignedTo != null ? ' (${t.assignedTo})' : ''} — Due ${DateFormat('EEE, MMM dd').format(t.dueDate!)}$overdue\n';
-    }
-    return response.trim();
+    return AIResult(reply: '"$kw" not found on your grocery list.');
   }
 
-  static String _queryGroceries(List<GroceryItem> groceryItems) {
-    final unpurchased = groceryItems.where((g) => !g.isPurchased).toList();
-    if (unpurchased.isEmpty) {
-      return _pick([
-        'Your grocery list is all clear — nothing left to buy! ✅',
-        'The shopping list is empty! You\'re all stocked up 🎉',
-        'Nothing on the grocery list right now.',
-      ]);
+  // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Add Maintenance
+  // ═══════════════════════════════════════════════════════════════
+
+  static AIResult? _detectAddMaintenance(String q, String original) {
+    final patterns = [
+      RegExp(r'(?:schedule|book)\s+(?:a\s+)?(?:maintenance\s+|service\s+|servicing\s+)?(?:for\s+)?(.+?)\s+(today|tomorrow|next week|this week|in \d+ days)', caseSensitive: false),
+      RegExp(r'add\s+(.+?)\s+(today|tomorrow|next week|this week|in \d+ days)', caseSensitive: false),
+    ];
+
+    // Must contain a time keyword to be maintenance
+    if (!q.contains('today') && !q.contains('tomorrow') && !q.contains('next week') && !q.contains('this week') && !RegExp(r'in \d+ days').hasMatch(q)) return null;
+    // Exclude explicit task intent
+    if (q.contains('task')) return null;
+
+    for (final p in patterns) {
+      final m = p.firstMatch(original);
+      if (m == null) continue;
+      String raw = m.group(1)?.trim() ?? '';
+      String time = m.group(2)?.trim().toLowerCase() ?? '';
+      if (raw.isEmpty) continue;
+
+      // Check if this looks like a maintenance item (contains service-related keywords)
+      final rl = raw.toLowerCase();
+      bool isMaintenance = rl.contains('service') || rl.contains('servic') || rl.contains('clean') ||
+          rl.contains('repair') || rl.contains('fix') || rl.contains('plumb') || rl.contains('ac') ||
+          rl.contains('filter') || rl.contains('tank') || rl.contains('purif');
+      if (!isMaintenance && !q.contains('schedule') && !q.contains('book')) continue;
+
+      DateTime due = DateTime.now();
+      if (time == 'tomorrow') due = due.add(const Duration(days: 1));
+      else if (time == 'next week') due = due.add(const Duration(days: 7));
+      else if (time == 'this week') due = due.add(const Duration(days: 4));
+      else if (time.startsWith('in ')) {
+        final d = RegExp(r'\d+').firstMatch(time);
+        if (d != null) due = due.add(Duration(days: int.tryParse(d.group(0)!) ?? 0));
+      }
+
+      String cat = 'General';
+      if (rl.contains('ac') || rl.contains('hvac')) cat = 'HVAC';
+      else if (rl.contains('water') || rl.contains('plumb') || rl.contains('tank')) cat = 'Water';
+      else if (rl.contains('electr')) cat = 'Electrical';
+
+      final title = _titleCase(raw);
+      return AIResult(
+        reply: 'Maintenance scheduled: **$title** on **${DateFormat('MMM dd').format(due)}** 🔧',
+        action: AIAction(type: 'add_maintenance', data: {
+          'title': title,
+          'category': cat,
+          'nextDue': due.toIso8601String(),
+        }),
+      );
     }
-    final intro = _pick([
-      'Here\'s what you still need to pick up:',
-      'These items are waiting on your grocery list:',
-      'Shopping list — things left to buy:',
-    ]);
-    String response = '$intro\n\n';
-    for (var g in unpurchased) {
-      response += '• ${g.name} — ${g.quantity} ${g.unit}\n';
-    }
-    return response.trim();
+    return null;
   }
 
-  static String _queryExpenses(List<Expense> expenses, double monthlyIncome) {
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY MATCHERS
+  // ═══════════════════════════════════════════════════════════════
+
+  static bool _isTaskQuery(String q) =>
+      (q.contains('task') || q.contains('to-do') || q.contains('todo') || q.contains('pending')) &&
+      (q.contains('what') || q.contains('show') || q.contains('list') || q.contains('due') || q.contains('pending') || q.contains('how many'));
+
+  static bool _isGroceryQuery(String q) =>
+      (q.contains('grocery') || q.contains('groceries') || q.contains('shopping list')) &&
+      (q.contains('what') || q.contains('show') || q.contains('list') || q.contains('need') || q.contains('how many'));
+
+  static bool _isExpenseQuery(String q) =>
+      (q.contains('spend') || q.contains('spent') || q.contains('expense') || q.contains('budget') || q.contains('how much'));
+
+  static bool _isMaintenanceQuery(String q) =>
+      (q.contains('maintenance') || q.contains('service') || q.contains('servicing') || q.contains('ac') || q.contains('plumb'));
+
+  static bool _isFinancialQuery(String q) =>
+      q.contains('financial') || q.contains('finance') || q.contains('saving') || q.contains('insight') || q.contains('invest');
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Tasks
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _queryTasks(List<HouseholdTask> tasks) {
+    final pending = tasks.where((t) => !t.isCompleted).toList()
+      ..sort((a, b) => (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+
+    if (pending.isEmpty) return 'No pending tasks. You\'re all caught up! 🎉';
+
+    if (pending.length <= 3) {
+      final names = pending.map((t) => t.title).join(', ');
+      return 'You have ${pending.length} pending task${pending.length > 1 ? 's' : ''}: $names.';
+    }
+
+    String r = 'You have **${pending.length} pending tasks**:\n\n';
+    for (var t in pending.take(7)) {
+      final due = t.dueDate != null ? ' — ${DateFormat('MMM dd').format(t.dueDate!)}' : '';
+      final overdue = t.isOverdue ? ' ⚠️' : '';
+      r += '• ${t.title}$due$overdue\n';
+    }
+    if (pending.length > 7) r += '\n...and ${pending.length - 7} more.';
+    return r.trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Groceries
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _queryGroceries(List<GroceryItem> items) {
+    final list = items.where((g) => !g.isPurchased).toList();
+    if (list.isEmpty) return 'Your grocery list is empty. Nothing to buy! ✅';
+
+    if (list.length <= 3) {
+      final names = list.map((g) => g.name).join(', ');
+      return 'You need: $names.';
+    }
+
+    String r = 'You have **${list.length} items** on your grocery list:\n\n';
+    for (var g in list) {
+      r += '• ${g.name} (${g.quantity} ${g.unit})\n';
+    }
+    return r.trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Expenses
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _queryExpenses(List<Expense> expenses, double income) {
     final now = DateTime.now();
     final thisMonth = expenses.where((e) => e.date.month == now.month && e.date.year == now.year).toList();
-    if (thisMonth.isEmpty) {
-      return 'No expenses recorded for this month yet. Track your first expense in the Finance screen!';
-    }
-    double total = thisMonth.fold(0.0, (sum, e) => sum + e.amount);
+
+    if (thisMonth.isEmpty) return 'No expenses recorded this month.';
+
+    double total = thisMonth.fold(0.0, (s, e) => s + e.amount);
+
+    // Category breakdown
     Map<String, double> cats = {};
     for (var e in thisMonth) {
       cats[e.category] = (cats[e.category] ?? 0) + e.amount;
     }
-    final sortedCats = cats.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    final sorted = cats.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
-    final intro = _pick([
-      'Here\'s a quick look at your spending this month:',
-      'Your expenses so far this month:',
-      'Month-to-date spending summary:',
-    ]);
-
-    String response = '$intro\n\n💰 **Total: ${_currencyFormat.format(total)}**\n\nBreakdown by category:\n';
-    for (var entry in sortedCats) {
-      response += '• ${entry.key}: ${_currencyFormat.format(entry.value)}\n';
+    String r = 'You spent **${_cur.format(total)}** this month.\n\n';
+    for (var c in sorted) {
+      r += '• ${c.key}: ${_cur.format(c.value)}\n';
     }
 
-    if (monthlyIncome > 0) {
-      final remaining = monthlyIncome - total;
-      if (remaining > 0) {
-        response += '\nYou still have **${_currencyFormat.format(remaining)}** left from your monthly budget 👍';
+    if (income > 0) {
+      final rem = income - total;
+      if (rem > 0) {
+        r += '\n${_cur.format(rem)} remaining in budget 👍';
       } else {
-        response += '\n⚠️ You\'ve gone **${_currencyFormat.format(-remaining)}** over budget this month.';
+        r += '\n⚠️ Over budget by ${_cur.format(-rem)}!';
       }
     }
-    return response.trim();
+    return r.trim();
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Maintenance
+  // ═══════════════════════════════════════════════════════════════
 
   static String _queryMaintenance(String q, List<MaintenanceTask> tasks) {
-    // Specific item lookup
-    final keywords = {'ac': 'ac', 'air condition': 'ac', 'plumb': 'plumb', 'electr': 'electr',
-      'water': 'water', 'purifier': 'purif', 'generator': 'generator'};
-    for (final kv in keywords.entries) {
-      if (q.contains(kv.key)) {
-        final task = tasks.firstWhere(
-          (t) => t.name.toLowerCase().contains(kv.value) || t.category.toLowerCase().contains(kv.value),
-          orElse: () => MaintenanceTask(id: '', name: '', category: ''),
-        );
-        if (task.id.isNotEmpty && task.nextDue != null) {
-          final overdue = task.isOverdue ? ' — ⚠️ This is already overdue!' : '';
-          return '${task.name} is scheduled for ${DateFormat('EEE, MMM dd, yyyy').format(task.nextDue!)}$overdue';
-        }
+    // Specific lookup
+    final kw = {'ac': 'ac', 'air condition': 'ac', 'plumb': 'plumb', 'electr': 'electr', 'water': 'water', 'purifier': 'purif'};
+    for (final e in kw.entries) {
+      if (!q.contains(e.key)) continue;
+      final t = tasks.firstWhere(
+        (t) => t.name.toLowerCase().contains(e.value) || t.category.toLowerCase().contains(e.value),
+        orElse: () => MaintenanceTask(id: '', name: '', category: ''),
+      );
+      if (t.id.isNotEmpty && t.nextDue != null) {
+        final od = t.isOverdue ? ' ⚠️ OVERDUE' : '';
+        return '${t.name}: scheduled for **${DateFormat('MMM dd, yyyy').format(t.nextDue!)}**$od';
       }
     }
 
+    // General list
     final upcoming = tasks.where((t) => !t.isCompleted && t.nextDue != null).toList()
       ..sort((a, b) => a.nextDue!.compareTo(b.nextDue!));
+    if (upcoming.isEmpty) return 'No maintenance tasks scheduled.';
 
-    if (upcoming.isEmpty) {
-      return 'No upcoming maintenance tasks scheduled. You can add one in the Maintenance screen!';
-    }
-
-    final intro = _pick([
-      'Here\'s your upcoming maintenance schedule:',
-      'These maintenance tasks are coming up soon:',
-      'Maintenance tasks on the radar:',
-    ]);
-    String response = '$intro\n\n';
+    String r = '**${upcoming.length} maintenance task${upcoming.length > 1 ? 's' : ''}** upcoming:\n\n';
     for (var t in upcoming.take(5)) {
-      final overdue = t.isOverdue ? ' ⚠️ OVERDUE' : '';
-      response += '• ${t.name} — ${DateFormat('MMM dd').format(t.nextDue!)}$overdue\n';
+      final od = t.isOverdue ? ' ⚠️' : '';
+      r += '• ${t.name} — ${DateFormat('MMM dd').format(t.nextDue!)}$od\n';
     }
-    return response.trim();
+    return r.trim();
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Financial Insights
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _queryFinancialInsights(List<Expense> expenses, List<Debt> debts, double income) {
+    List<String> insights = [];
+    final now = DateTime.now();
+
+    // Monthly spending
+    final thisMonth = expenses.where((e) => e.date.month == now.month && e.date.year == now.year);
+    final lastMonth = expenses.where((e) =>
+        e.date.month == (now.month == 1 ? 12 : now.month - 1) &&
+        e.date.year == (now.month == 1 ? now.year - 1 : now.year));
+
+    double thisTotal = thisMonth.fold(0.0, (s, e) => s + e.amount);
+    double lastTotal = lastMonth.fold(0.0, (s, e) => s + e.amount);
+
+    if (income > 0) {
+      double savingsRate = ((income - thisTotal) / income * 100);
+      if (savingsRate >= 30) {
+        insights.add('Great saving rate of ${savingsRate.toInt()}% this month! 🌟');
+      } else if (savingsRate >= 10) {
+        insights.add('You are saving ${savingsRate.toInt()}% of your income. A 20%+ target is recommended.');
+      } else {
+        insights.add('⚠️ You are saving only ${savingsRate.toInt()}% this month. Try to cut some spending.');
+      }
+    }
+
+    if (lastTotal > 0 && thisTotal > lastTotal) {
+      final pct = ((thisTotal - lastTotal) / lastTotal * 100).toInt();
+      insights.add('You spent $pct% more than last month.');
+    } else if (lastTotal > 0 && thisTotal < lastTotal) {
+      final pct = ((lastTotal - thisTotal) / lastTotal * 100).toInt();
+      insights.add('You spent $pct% less than last month 👍');
+    }
+
+    if (debts.isNotEmpty && income > 0) {
+      double totalDebt = debts.fold(0.0, (s, d) => s + d.remainingAmount);
+      double suggested = income * 0.2;
+      int months = (totalDebt / suggested).ceil();
+      insights.add('If you save ${_cur.format(suggested)}/month, you can clear ${_cur.format(totalDebt)} debt in **$months months**.');
+    }
+
+    if (insights.isEmpty) return 'Your finances look healthy! ✅';
+    return insights.join('\n\n');
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Debts
+  // ═══════════════════════════════════════════════════════════════
 
   static String _queryDebts(List<Debt> debts) {
-    if (debts.isEmpty) {
-      return _pick([
-        '🎉 No debts recorded — that\'s amazing!',
-        'You have no debts in your records. Keep it up! 💪',
-      ]);
-    }
-    double total = debts.fold(0.0, (sum, d) => sum + d.remainingAmount);
-    String response = 'Here\'s your current debt overview:\n\n💳 **Total remaining: ${_currencyFormat.format(total)}**\n\n';
+    if (debts.isEmpty) return 'No debts recorded. Great job! 🎉';
+    double total = debts.fold(0.0, (s, d) => s + d.remainingAmount);
+    String r = 'Total debt: **${_cur.format(total)}**\n\n';
     for (var d in debts) {
-      response += '• **${d.name}**: ${_currencyFormat.format(d.remainingAmount)} remaining';
-      if (d.monthlyPayment > 0) {
-        response += ' (~${d.monthsToPayoff} months to pay off)';
-      }
-      response += '\n';
+      r += '• ${d.name}: ${_cur.format(d.remainingAmount)}';
+      if (d.monthlyPayment > 0) r += ' (~${d.monthsToPayoff} months left)';
+      r += '\n';
     }
-    return response.trim();
+    return r.trim();
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Bills
+  // ═══════════════════════════════════════════════════════════════
 
   static String _queryBills(List<UtilityBill> bills) {
     final unpaid = bills.where((b) => !b.isPaid).toList()
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+    if (unpaid.isEmpty) return 'All bills paid! ✅';
 
-    if (unpaid.isEmpty) {
-      return _pick([
-        'All bills paid! You\'re on top of your finances 🎉',
-        'No unpaid bills — great job staying on top of things! ✅',
-      ]);
-    }
-    final intro = _pick([
-      'Here are your unpaid bills:',
-      'Bills that still need to be paid:',
-    ]);
-    String response = '$intro\n\n';
+    String r = '${unpaid.length} unpaid bill${unpaid.length > 1 ? 's' : ''}:\n\n';
     for (var b in unpaid) {
-      final overdue = b.isOverdue ? ' ⚠️ OVERDUE' : '';
-      response += '• **${b.type}**: ${_currencyFormat.format(b.amount)} — Due ${DateFormat('MMM dd').format(b.dueDate)}$overdue\n';
+      final od = b.isOverdue ? ' ⚠️' : '';
+      r += '• ${b.type}: ${_cur.format(b.amount)} — Due ${DateFormat('MMM dd').format(b.dueDate)}$od\n';
     }
-    return response.trim();
+    return r.trim();
   }
 
-  static String _queryHealthScore(
-      List<MaintenanceTask> maintenance, List<HouseholdTask> tasks, List<UtilityBill> bills) {
-    final scores = getHomeHealthScores(maintenanceTasks: maintenance, householdTasks: tasks, bills: bills);
+  // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Home Health Score
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _queryHealthScore(List<MaintenanceTask> maint, List<HouseholdTask> tasks, List<UtilityBill> bills) {
+    final scores = getHomeHealthScores(maintenanceTasks: maint, householdTasks: tasks, bills: bills);
     final overall = scores['overall']!.toInt();
 
-    String verdict;
-    if (overall >= 80) {
-      verdict = 'Your home is in great shape! Keep it up 🏠✨';
-    } else if (overall >= 60) {
-      verdict = 'Things are mostly good, but a few areas need attention.';
-    } else {
-      verdict = 'There are some things that need your attention soon.';
-    }
+    String status;
+    if (overall >= 80) status = 'Your home is in great shape! 🏠✨';
+    else if (overall >= 60) status = 'Mostly good, a few areas need attention.';
+    else status = 'Some things need your attention soon.';
 
-    return '$verdict\n\n'
-        '🏠 **Overall Score: $overall / 100**\n\n'
+    return '$status\n\n'
+        '🏠 Overall: **$overall/100**\n'
         '🔧 Maintenance: ${scores['maintenance']!.toInt()}%\n'
         '📋 Tasks: ${scores['tasks']!.toInt()}%\n'
         '📄 Bills: ${scores['bills']!.toInt()}%';
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  Smart Suggestions
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _smartSuggestions(List<GroceryItem> groceries, List<MaintenanceTask> maint, List<Expense> expenses, List<Debt> debts, double income) {
+    List<String> tips = [];
+    final now = DateTime.now();
+
+    // Maintenance due soon
+    for (var t in maint.where((m) => m.isDueSoon)) {
+      tips.add('${t.name} is due in ${t.daysUntilDue} days.');
+    }
+    for (var t in maint.where((m) => m.isOverdue)) {
+      tips.add('⚠️ ${t.name} is overdue!');
+    }
+
+    // Spending comparison
+    final thisMonth = expenses.where((e) => e.date.month == now.month && e.date.year == now.year);
+    final lastMonth = expenses.where((e) =>
+        e.date.month == (now.month == 1 ? 12 : now.month - 1) &&
+        e.date.year == (now.month == 1 ? now.year - 1 : now.year));
+    double thisTotal = thisMonth.fold(0.0, (s, e) => s + e.amount);
+    double lastTotal = lastMonth.fold(0.0, (s, e) => s + e.amount);
+    if (lastTotal > 0 && thisTotal > lastTotal * 1.1) {
+      tips.add('You spent more this month than last month. Consider reviewing your spending.');
+    }
+
+    // Debt payoff
+    if (income > 0 && debts.isNotEmpty) {
+      double totalDebt = debts.fold(0.0, (s, d) => s + d.remainingAmount);
+      double save = income * 0.2;
+      int months = (totalDebt / save).ceil();
+      tips.add('If you save ${_cur.format(save)}/month, you can clear your debt in $months months.');
+    }
+
+    // Grocery reminder
+    bool hasMilk = groceries.any((g) => g.name.toLowerCase().contains('milk') && !g.isPurchased);
+    if (!hasMilk) tips.add('You usually buy milk every week. Should I add it to the grocery list?');
+
+    if (tips.isEmpty) return 'Everything looks great! No suggestions right now. ✅';
+    return 'Here are my suggestions:\n\n• ${tips.join('\n• ')}';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  Help
+  // ═══════════════════════════════════════════════════════════════
+
   static String _helpMessage() {
-    return 'Here\'s what I can help you with:\n\n'
-        '**Add things:**\n'
-        '• "Add milk to groceries"\n'
-        '• "Add task clean kitchen tomorrow"\n'
-        '• "Remind me to pay rent"\n\n'
-        '**Mark as done:**\n'
-        '• "I bought eggs"\n'
-        '• "Mark task clean bathroom as done"\n\n'
-        '**Remove items:**\n'
-        '• "Remove milk from grocery list"\n\n'
-        '**Ask questions:**\n'
-        '• "What tasks are due this week?"\n'
-        '• "What\'s on the grocery list?"\n'
-        '• "How much did we spend this month?"\n'
-        '• "When should the AC be serviced?"\n'
-        '• "Show unpaid bills"\n'
-        '• "What\'s our home health score?"';
+    return 'I can manage your entire home! Try:\n\n'
+        '📋 **Tasks**: "Add home cleaning to tasks" · "What tasks are pending?"\n'
+        '🛒 **Grocery**: "Add milk and eggs to grocery list" · "Remove bread from list"\n'
+        '💸 **Expenses**: "Add electricity bill 1200" · "How much did we spend?"\n'
+        '🔧 **Maintenance**: "Schedule AC servicing next week" · "When is AC due?"\n'
+        '📊 **Insights**: "Give me financial advice" · "Any suggestions?"';
   }
 
-  // -----------------------------------------------------------
-  // Utility: Title Case
-  // -----------------------------------------------------------
-
-  static String _toTitleCase(String s) {
-    if (s.isEmpty) return s;
-    return s.split(' ').map((w) {
-      if (w.isEmpty) return w;
-      return w[0].toUpperCase() + w.substring(1);
-    }).join(' ');
-  }
-
-  // -----------------------------------------------------------
-  // Legacy methods (still used by dashboard / finance screens)
-  // -----------------------------------------------------------
+  // ═══════════════════════════════════════════════════════════════
+  //  Legacy Methods (used by dashboard / finance screens)
+  // ═══════════════════════════════════════════════════════════════
 
   static DateTime? predictNextMaintenance(MaintenanceTask task) {
     if (task.history.length < 2) {
@@ -620,39 +1043,13 @@ class AIService {
     List<String> suggestions = [];
     for (var task in tasks) {
       if (task.isOverdue) {
-        suggestions.add('⚠️ ${task.name} is overdue! It was due ${_daysAgo(task.nextDue!)}.');
+        suggestions.add('⚠️ ${task.name} is overdue!');
       } else if (task.isDueSoon) {
-        suggestions.add('📅 ${task.name} is due in ${task.daysUntilDue} days. Schedule it soon!');
-      }
-      if (task.history.length >= 2) {
-        final predicted = predictNextMaintenance(task);
-        if (predicted != null) {
-          final avgDays = _getAverageInterval(task);
-          suggestions.add('🤖 Based on history, ${task.name} needs service every ~$avgDays days. Next predicted: ${DateFormat('MMM dd').format(predicted)}');
-        }
+        suggestions.add('📅 ${task.name} is due in ${task.daysUntilDue} days.');
       }
     }
-    if (suggestions.isEmpty) {
-      suggestions.add('✅ All maintenance tasks are up to date!');
-    }
+    if (suggestions.isEmpty) suggestions.add('✅ All maintenance tasks are up to date!');
     return suggestions;
-  }
-
-  static int _getAverageInterval(MaintenanceTask task) {
-    if (task.history.length < 2) return task.recurringDays;
-    task.history.sort();
-    int totalDays = 0;
-    for (int i = 1; i < task.history.length; i++) {
-      totalDays += task.history[i].difference(task.history[i - 1]).inDays;
-    }
-    return totalDays ~/ (task.history.length - 1);
-  }
-
-  static String _daysAgo(DateTime date) {
-    final diff = DateTime.now().difference(date).inDays;
-    if (diff == 0) return 'today';
-    if (diff == 1) return '1 day ago';
-    return '$diff days ago';
   }
 
   static Map<String, dynamic> analyzeFinances({
@@ -695,7 +1092,7 @@ class AIService {
       'totalSaved': totalSaved,
       'categoryBreakdown': categoryBreakdown,
       'healthScore': healthScore,
-      'suggestions': _getFinancialSuggestions(
+      'suggestions': _getLegacySuggestions(
         monthlyIncome: monthlyIncome,
         monthlyExpense: thisMonthTotal,
         totalDebt: totalDebt,
@@ -704,7 +1101,7 @@ class AIService {
     };
   }
 
-  static List<String> _getFinancialSuggestions({
+  static List<String> _getLegacySuggestions({
     required double monthlyIncome,
     required double monthlyExpense,
     required double totalDebt,
@@ -714,24 +1111,17 @@ class AIService {
     if (monthlyIncome > 0) {
       double savingsRate = (monthlyIncome - monthlyExpense) / monthlyIncome;
       if (savingsRate < 0.1) {
-        suggestions.add('💡 You\'re saving less than 10% of income. Try to reduce spending.');
+        suggestions.add('💡 Saving less than 10%. Try to reduce spending.');
       } else if (savingsRate > 0.3) {
-        suggestions.add('🌟 Great job! You\'re saving ${(savingsRate * 100).toInt()}% of your income.');
+        suggestions.add('🌟 Great! Saving ${(savingsRate * 100).toInt()}% of income.');
       }
     }
     if (totalDebt > 0 && monthlyIncome > 0) {
-      double suggestedPayment = monthlyIncome * 0.2;
-      int monthsToPayoff = (totalDebt / suggestedPayment).ceil();
-      suggestions.add('📊 If you save ₹${suggestedPayment.toStringAsFixed(0)}/month, your debt of ₹${totalDebt.toStringAsFixed(0)} can be cleared in ~$monthsToPayoff months.');
+      double pay = monthlyIncome * 0.2;
+      int months = (totalDebt / pay).ceil();
+      suggestions.add('📊 Save ${_cur.format(pay)}/month to clear debt in ~$months months.');
     }
-    for (var debt in debts) {
-      if (debt.monthlyPayment > 0) {
-        suggestions.add('📋 ${debt.name}: ₹${debt.remainingAmount.toStringAsFixed(0)} remaining. ${debt.monthsToPayoff} months to payoff at ₹${debt.monthlyPayment.toStringAsFixed(0)}/month.');
-      }
-    }
-    if (suggestions.isEmpty) {
-      suggestions.add('✅ Your finances look healthy!');
-    }
+    if (suggestions.isEmpty) suggestions.add('✅ Finances look healthy!');
     return suggestions;
   }
 

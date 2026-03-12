@@ -673,88 +673,35 @@ class AppState extends ChangeNotifier {
     final userMsg = ChatMessage(id: '', text: text, isUser: true);
     await _firebase.saveChatMessage(_householdId!, userMsg);
 
-<<<<<<< HEAD
-    // Process with AI (detects intent + builds human reply)
-    final result = AIService.processMessage(
-      message: text,
-=======
-    // Generate AI response
-    final command = AIService.getChatResponse(
-      question: text,
->>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
-      maintenanceTasks: _maintenanceTasks,
-      householdTasks: _householdTasks,
-      groceryItems: _groceryItems,
-      expenses: _expenses,
-      debts: _debts,
-      bills: _utilityBills,
-      monthlyIncome: _monthlyIncome,
-    );
+    // Process with AI — uses Gemini LLM when configured, falls back to regex
+    AIResult result;
+    try {
+      result = await AIService.processMessageWithLLM(
+        message: text,
+        maintenanceTasks: _maintenanceTasks,
+        householdTasks: _householdTasks,
+        groceryItems: _groceryItems,
+        expenses: _expenses,
+        debts: _debts,
+        bills: _utilityBills,
+        monthlyIncome: _monthlyIncome,
+      );
 
-<<<<<<< HEAD
-    // Execute action if present
-    if (result.action != null) {
-      await _executeAIAction(result.action!);
+      // Execute action if present
+      if (result.action != null) {
+        await _executeAIAction(result.action!);
+      }
+    } catch (e) {
+      debugPrint('AI Processing error: $e');
+      // Fallback if even the AIService fallback fails
+      result = AIResult(
+        reply: 'I encountered a technical hiccup while processing that. '
+               'Could you try again or ask something simpler?',
+      );
     }
 
     // Save AI reply
     final aiMsg = ChatMessage(id: '', text: result.reply, isUser: false);
-=======
-    // Execute actions based on command
-    if (command.actionType == AIActionType.addTask) {
-      final title = command.actionData?['title'] as String?;
-      if (title != null) {
-        await addHouseholdTask(HouseholdTask(
-          id: '',
-          title: title,
-          category: 'General',
-          assignedTo: currentUser,
-        ));
-      }
-    } else if (command.actionType == AIActionType.completeTask) {
-      final title = command.actionData?['title'] as String?;
-      if (title != null) {
-        // Find task by title (case-insensitive)
-        final taskToComplete = _householdTasks.cast<HouseholdTask?>().firstWhere(
-            (t) => t != null && t.title.toLowerCase() == title.toLowerCase() && !t.isCompleted,
-            orElse: () => _householdTasks.cast<HouseholdTask?>().firstWhere(
-                (t) => t != null && t.title.toLowerCase().contains(title.toLowerCase()) && !t.isCompleted,
-                orElse: () => null));
-                
-        if (taskToComplete != null) {
-          // toggleHouseholdTask finds by ID and marks as complete
-          await toggleHouseholdTask(taskToComplete.id);
-        }
-      }
-    } else if (command.actionType == AIActionType.addGrocery) {
-      final name = command.actionData?['name'] as String?;
-      if (name != null) {
-        await addGroceryItem(GroceryItem(
-          id: '',
-          name: name,
-        ));
-      }
-    } else if (command.actionType == AIActionType.addExpense) {
-      final amount = command.actionData?['amount'] as double?;
-      final title = command.actionData?['title'] as String?;
-      if (amount != null && title != null) {
-        await addExpense(Expense(
-          id: '',
-          title: title,
-          amount: amount,
-          category: 'General',
-          date: DateTime.now(),
-          paidBy: currentUser,
-        ));
-      }
-    }
-
-    final aiMsg = ChatMessage(
-      id: '',
-      text: command.responseText,
-      isUser: false,
-    );
->>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
     await _firebase.saveChatMessage(_householdId!, aiMsg);
   }
 
@@ -786,6 +733,32 @@ class AppState extends ChangeNotifier {
         await addHouseholdTask(task);
         break;
 
+      case 'add_expense':
+        final expense = Expense(
+          id: '',
+          title: action.data['title'] ?? 'Misc Expense',
+          amount: (action.data['amount'] ?? 0).toDouble(),
+          category: action.data['category'] ?? 'Misc',
+          date: DateTime.now(),
+          paidBy: currentUser,
+        );
+        await addExpense(expense);
+        break;
+
+      case 'add_maintenance':
+        final task = MaintenanceTask(
+          id: '',
+          name: action.data['title'] ?? 'Maintenance',
+          category: action.data['category'] ?? 'General',
+          nextDue: action.data['nextDue'] != null
+              ? DateTime.parse(action.data['nextDue'])
+              : DateTime.now(),
+          recurringDays: 90,
+          assignedTo: currentUser,
+        );
+        await addMaintenanceTask(task);
+        break;
+
       case 'complete_grocery':
         await toggleGroceryItem(action.data['id']);
         break;
@@ -796,6 +769,21 @@ class AppState extends ChangeNotifier {
 
       case 'delete_grocery':
         await deleteGroceryItem(action.data['id']);
+        break;
+
+      case 'add_grocery_multi':
+        final items = action.data['items'] as List<dynamic>? ?? [];
+        for (var itemData in items) {
+          final item = GroceryItem(
+            id: '',
+            name: itemData['name'] ?? 'Item',
+            category: itemData['category'] ?? 'General',
+            quantity: itemData['quantity'] ?? 1,
+            unit: itemData['unit'] ?? 'pcs',
+            addedBy: currentUser,
+          );
+          await addGroceryItem(item);
+        }
         break;
     }
   }

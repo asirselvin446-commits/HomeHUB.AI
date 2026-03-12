@@ -19,12 +19,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   // Quick action + question chips
   final List<Map<String, dynamic>> _quickChips = [
     {'icon': Icons.add_shopping_cart_rounded, 'label': 'Add milk to groceries'},
-    {'icon': Icons.task_alt_rounded, 'label': 'Add task clean kitchen tomorrow'},
-    {'icon': Icons.checklist_rounded, 'label': 'What tasks are due this week?'},
-    {'icon': Icons.shopping_bag_outlined, 'label': "What's on the grocery list?"},
+    {'icon': Icons.task_alt_rounded, 'label': 'Add task clean water tank tomorrow'},
+    {'icon': Icons.receipt_long_outlined, 'label': 'Add electricity bill 1200 rupees'},
+    {'icon': Icons.home_repair_service_outlined, 'label': 'When should I service the AC?'},
+    {'icon': Icons.lightbulb_outline_rounded, 'label': 'Any financial suggestions?'},
+    {'icon': Icons.checklist_rounded, 'label': 'What tasks are pending?'},
     {'icon': Icons.currency_rupee_rounded, 'label': 'How much did we spend this month?'},
-    {'icon': Icons.home_repair_service_outlined, 'label': 'Show upcoming maintenance'},
-    {'icon': Icons.receipt_long_outlined, 'label': 'Show unpaid bills'},
     {'icon': Icons.health_and_safety_outlined, 'label': "What's our home health score?"},
   ];
 
@@ -42,14 +42,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     _textController.clear();
     setState(() => _isTyping = true);
 
-    // Small artificial delay so the typing indicator is visible
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-
-    await context.read<AppState>().sendChatMessage(text);
-
-    if (!mounted) return;
-    setState(() => _isTyping = false);
+    try {
+      await context.read<AppState>().sendChatMessage(text);
+    } finally {
+      if (mounted) {
+        setState(() => _isTyping = false);
+      }
+    }
 
     // Scroll to bottom
     Future.delayed(const Duration(milliseconds: 120), () {
