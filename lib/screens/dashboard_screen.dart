@@ -8,6 +8,7 @@ import 'tasks_screen.dart';
 import 'finance_screen.dart';
 import 'grocery_screen.dart';
 import 'maintenance_screen.dart';
+import 'notifications_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -59,19 +60,65 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: () => state.toggleTheme(),
-                        child: Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-                            borderRadius: BorderRadius.circular(14),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NotificationsScreen(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(12),
+                              margin: EdgeInsets.only(right: 12),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Stack(
+                                children: [
+                                  Icon(
+                                    Icons.notifications_none_rounded,
+                                    color: isDark ? AppTheme.darkText : AppTheme.primaryDark,
+                                  ),
+                                  if (state.unreadNotificationsCount > 0)
+                                    Positioned(
+                                      right: 0,
+                                      top: 0,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.accentOrange,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        constraints: BoxConstraints(
+                                          minWidth: 10,
+                                          minHeight: 10,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: Icon(
-                            isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                            color: isDark ? AppTheme.accentYellow : AppTheme.primaryDark,
+                          GestureDetector(
+                            onTap: () => state.toggleTheme(),
+                            child: Container(
+                              padding: EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                color: isDark ? AppTheme.accentYellow : AppTheme.primaryDark,
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),

@@ -252,17 +252,34 @@ class EmergencyScreen extends StatelessWidget {
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Container(
-                                      padding: EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: AppTheme.accentTeal
-                                            .withOpacity(0.15),
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                    GestureDetector(
+                                      onTap: () async {
+                                        final url = Uri.parse('tel:${contact.phone}');
+                                        try {
+                                          await launchUrl(url);
+                                        } catch (_) {
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Could not open dialer for ${contact.phone}'),
+                                                backgroundColor: AppTheme.accentOrange,
+                                              ),
+                                            );
+                                          }
+                                        }
+                                      },
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.accentTeal
+                                              .withOpacity(0.15),
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        child: Icon(Icons.phone_rounded,
+                                            color: AppTheme.accentTeal,
+                                            size: 18),
                                       ),
-                                      child: Icon(Icons.phone_rounded,
-                                          color: AppTheme.accentTeal,
-                                          size: 18),
                                     ),
                                     SizedBox(width: 8),
                                     GestureDetector(
@@ -383,9 +400,9 @@ class EmergencyScreen extends StatelessWidget {
                 onPressed: () async {
                   Navigator.pop(ctx);
                   final url = Uri.parse('tel:${contact.phone}');
-                  if (await canLaunchUrl(url)) {
+                  try {
                     await launchUrl(url);
-                  } else {
+                  } catch (_) {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

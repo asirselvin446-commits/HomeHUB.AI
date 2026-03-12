@@ -123,15 +123,36 @@ class _ExpensesTab extends StatelessWidget {
         analysis['categoryBreakdown'] as Map<String, double>;
     final suggestions = analysis['suggestions'] as List<String>;
 
+    final canEdit = state.canEditFinance;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addExpense',
-        onPressed: () => _showExpenseDialog(context),
-        child: Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              heroTag: 'addExpense',
+              onPressed: () => _showExpenseDialog(context),
+              child: Icon(Icons.add_rounded),
+            )
+          : null,
       body: ListView(
         padding: EdgeInsets.all(20),
         children: [
+          if (!canEdit)
+            Container(
+              margin: EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppTheme.accentBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.accentBlue.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline_rounded, size: 16, color: AppTheme.accentBlue),
+                  SizedBox(width: 8),
+                  Text('You have view-only access to finances',
+                      style: TextStyle(fontSize: 12, color: AppTheme.accentBlue, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
           // Summary Card
           GradientCard(
             gradient: AppTheme.tealGradient,
@@ -378,7 +399,7 @@ class _ExpensesTab extends StatelessWidget {
                           color: AppTheme.accentOrange,
                         ),
                       ),
-                      IconButton(
+                      if (canEdit) ...[                      IconButton(
                         icon: Icon(Icons.edit_rounded, size: 18),
                         color: isDark
                             ? AppTheme.darkTextSecondary
@@ -391,6 +412,7 @@ class _ExpensesTab extends StatelessWidget {
                         color: AppTheme.accentOrange,
                         onPressed: () => state.deleteExpense(e.id),
                       ),
+                      ],
                     ],
                   ),
                 ),
@@ -598,12 +620,15 @@ class _DebtsTab extends StatelessWidget {
     final state = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final canEdit = state.canEditFinance;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addDebt',
-        onPressed: () => _showDebtDialog(context),
-        child: Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              heroTag: 'addDebt',
+              onPressed: () => _showDebtDialog(context),
+              child: Icon(Icons.add_rounded),
+            )
+          : null,
       body: state.debts.isEmpty
           ? EmptyState(
               icon: Icons.celebration_rounded,
@@ -671,6 +696,7 @@ class _DebtsTab extends StatelessWidget {
                   color: isDark ? AppTheme.darkText : AppTheme.lightText,
                 ),
               ),
+              if (state.canEditFinance)
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -750,6 +776,7 @@ class _DebtsTab extends StatelessWidget {
           ),
           SizedBox(height: 12),
           // Make Payment Button
+          if (state.canEditFinance)
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -969,12 +996,15 @@ class _SavingsTab extends StatelessWidget {
     final state = context.watch<AppState>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final canEdit = state.canEditFinance;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addSavings',
-        onPressed: () => _showSavingsDialog(context),
-        child: Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              heroTag: 'addSavings',
+              onPressed: () => _showSavingsDialog(context),
+              child: Icon(Icons.add_rounded),
+            )
+          : null,
       body: state.savingsGoals.isEmpty
           ? EmptyState(
               icon: Icons.savings_rounded,
@@ -1070,6 +1100,7 @@ class _SavingsTab extends StatelessWidget {
             ],
           ),
           SizedBox(height: 10),
+          if (state.canEditFinance)
           Row(
             children: [
               Expanded(
@@ -1308,12 +1339,15 @@ class _BillsTab extends StatelessWidget {
     final bills = state.utilityBills
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
 
+    final canEdit = state.canEditFinance;
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addBill',
-        onPressed: () => _showBillDialog(context),
-        child: Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              heroTag: 'addBill',
+              onPressed: () => _showBillDialog(context),
+              child: Icon(Icons.add_rounded),
+            )
+          : null,
       body: bills.isEmpty
           ? EmptyState(
               icon: Icons.receipt_long_rounded,
@@ -1410,7 +1444,7 @@ class _BillsTab extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 8),
-                      GestureDetector(
+                      if (canEdit) ...[                      GestureDetector(
                         onTap: () => state.toggleBillPaid(bill.id),
                         child: Container(
                           width: 28,
@@ -1451,6 +1485,7 @@ class _BillsTab extends StatelessWidget {
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
                       ),
+                      ],
                     ],
                   ),
                 );

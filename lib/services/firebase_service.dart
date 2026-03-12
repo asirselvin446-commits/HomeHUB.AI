@@ -74,10 +74,11 @@ class FirebaseService {
     required String email,
     String? nickname,
     String? householdId,
-    String role = 'Admin',
-    String avatar = '👑',
+    String role = 'Member',
+    String avatar = '👤',
+    bool? isAdmin,
   }) async {
-    await _db.collection('users').doc(uid).set({
+    final data = <String, dynamic>{
       'name': name,
       'nickname': nickname,
       'email': email,
@@ -85,7 +86,11 @@ class FirebaseService {
       'role': role,
       'avatar': avatar,
       'createdAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    };
+    if (isAdmin != null) {
+      data['isAdmin'] = isAdmin;
+    }
+    await _db.collection('users').doc(uid).set(data, SetOptions(merge: true));
   }
 
   // Get user profile
@@ -136,6 +141,21 @@ class FirebaseService {
       'members': FieldValue.arrayUnion([userId]),
     });
     return true;
+  }
+
+  // Remove member from household
+  Future<void> removeMemberFromHousehold({
+    required String householdId,
+    required String userId,
+  }) async {
+    await _db.collection('households').doc(householdId).update({
+      'members': FieldValue.arrayRemove([userId]),
+    });
+    // Clear the user's householdId so they're no longer linked
+    await _db.collection('users').doc(userId).update({
+      'householdId': FieldValue.delete(),
+      'role': 'Member',
+    });
   }
 
   // ============ GENERIC FIRESTORE CRUD ============
@@ -420,17 +440,21 @@ class FirebaseService {
     if (household == null) return [];
 
     final memberIds = List<String>.from(household['members'] ?? []);
+    final ownerId = household['ownerId'] as String?;
     List<FamilyMember> members = [];
 
     for (var uid in memberIds) {
       final profile = await getUserProfile(uid);
       if (profile != null) {
+        // The household owner is always admin
+        final profileIsAdmin = (profile['isAdmin'] == true) || (uid == ownerId);
         members.add(FamilyMember(
           id: uid,
           name: profile['name'] ?? 'Unknown',
           email: profile['email'] ?? '',
           role: profile['role'] ?? 'Member',
           avatar: profile['avatar'] ?? '👤',
+          isAdmin: profileIsAdmin,
         ));
       }
     }

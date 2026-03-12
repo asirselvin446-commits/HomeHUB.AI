@@ -6,6 +6,8 @@ import '../theme/app_theme.dart';
 import 'family_screen.dart';
 import 'emergency_screen.dart';
 import 'ai_assistant_screen.dart';
+import 'history_screen.dart';
+import 'feedback_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -184,6 +186,14 @@ class MoreScreen extends StatelessWidget {
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => EmergencyScreen())),
             ),
+            _MenuItem(
+              icon: Icons.history_rounded,
+              title: 'Activity History',
+              subtitle: 'Tasks, groceries & expenses',
+              color: Color(0xFF8E24AA),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => HistoryScreen())),
+            ),
           ], isDark),
 
           SizedBox(height: 16),
@@ -200,6 +210,18 @@ class MoreScreen extends StatelessWidget {
               trailing: Switch(
                 value: isDark,
                 onChanged: (_) => state.toggleTheme(),
+                activeColor: AppTheme.primaryDark,
+              ),
+            ),
+            _MenuItem(
+              icon: Icons.notifications_active_rounded,
+              title: 'Notifications',
+              subtitle: state.notificationsEnabled ? 'Enabled' : 'Disabled',
+              color: AppTheme.accentBlue,
+              onTap: () => state.toggleNotificationsEnabled(!state.notificationsEnabled),
+              trailing: Switch(
+                value: state.notificationsEnabled,
+                onChanged: (val) => state.toggleNotificationsEnabled(val),
                 activeColor: AppTheme.primaryDark,
               ),
             ),
@@ -245,6 +267,14 @@ class MoreScreen extends StatelessWidget {
                   ],
                 );
               },
+            ),
+            _MenuItem(
+              icon: Icons.feedback_rounded,
+              title: 'Feedback & Report',
+              subtitle: 'Send feedback or report issues',
+              color: Color(0xFF7C3AED),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => FeedbackScreen())),
             ),
             _MenuItem(
               icon: Icons.logout_rounded,

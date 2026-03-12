@@ -20,6 +20,7 @@ class AppState extends ChangeNotifier {
   bool _isDarkMode = true;
   bool _notificationsEnabled = true;
   double _monthlyIncome = 0;
+  List<AppNotification> _appNotifications = [];
 
   // Data lists
   List<MaintenanceTask> _maintenanceTasks = [];
@@ -43,17 +44,28 @@ class AppState extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isDarkMode => _isDarkMode;
   bool get notificationsEnabled => _notificationsEnabled;
+  List<AppNotification> get appNotifications => _appNotifications;
+  int get unreadNotificationsCount => _appNotifications.where((n) => !n.isRead).length;
+
   String? get householdId => _householdId;
   double get monthlyIncome => _monthlyIncome;
   String? get nickname => _userProfile?['nickname'];
   String? get familyRole => _userProfile?['role'];
+  String? get currentUserId => _firebaseUser?.uid;
+
+  // ============ PERMISSION HELPERS ============
+  bool get isAdmin => _userProfile?['isAdmin'] == true;
+  bool get canEditFinance {
+    final role = familyRole;
+    return isAdmin || role == 'Father' || role == 'Mother';
+  }
+  bool get canRemoveMembers => isAdmin;
   bool get isProfileComplete =>
       _userProfile != null &&
       _userProfile!['nickname'] != null &&
       _userProfile!['nickname'].toString().isNotEmpty &&
       _userProfile!['role'] != null &&
-      _userProfile!['role'] != 'Admin' && // Admin is default, we want them to pick a role
-      _userProfile!['role'] != 'Member'; // Member is default for joined users
+      _userProfile!['role'] != 'Member';
 
   String get currentUser =>
       _firebaseUser?.displayName ?? _userProfile?['name'] ?? 'User';
@@ -111,6 +123,7 @@ class AppState extends ChangeNotifier {
     await _localStorage.init();
     _isDarkMode = _localStorage.getIsDarkMode();
     _notificationsEnabled = _localStorage.getNotificationsEnabled();
+    _appNotifications = _localStorage.getNotifications();
 
     // Listen to auth state changes
     _firebase.authStateChanges.listen((user) {
@@ -145,6 +158,25 @@ class AppState extends ChangeNotifier {
     final household = await _firebase.getHousehold(_householdId!);
     if (household != null) {
       _monthlyIncome = (household['monthlyIncome'] ?? 0).toDouble();
+
+      // Auto-set isAdmin for the household owner if not already set
+      final ownerId = household['ownerId'] as String?;
+      if (ownerId != null &&
+          _firebaseUser != null &&
+          ownerId == _firebaseUser!.uid &&
+          _userProfile?['isAdmin'] != true) {
+        await _firebase.saveUserProfile(
+          uid: _firebaseUser!.uid,
+          name: _firebaseUser!.displayName ?? 'User',
+          email: _firebaseUser!.email ?? '',
+          householdId: _householdId,
+          role: _userProfile?['role'] ?? 'Member',
+          avatar: _userProfile?['avatar'] ?? '👤',
+          isAdmin: true,
+        );
+        // Reload profile to pick up the new isAdmin flag
+        _userProfile = await _firebase.getUserProfile(_firebaseUser!.uid);
+      }
     }
 
     // Load all data
@@ -177,6 +209,7 @@ class AppState extends ChangeNotifier {
           );
           for (final t in newTasks) {
             NotificationService.instance.showTaskAddedNotification(t.title);
+            _addNotificationToHistory('📋 New Task Added', t.title);
           }
         }
         _householdTasks = data;
@@ -193,6 +226,7 @@ class AppState extends ChangeNotifier {
           );
           for (final g in newItems) {
             NotificationService.instance.showGroceryAddedNotification(g.name);
+            _addNotificationToHistory('🛒 New Grocery Item', '${g.name} added to the list');
           }
         }
         _groceryItems = data;
@@ -269,7 +303,67 @@ class AppState extends ChangeNotifier {
     _familyMembers = [];
     _emergencyContacts = [];
     _chatMessages = [];
+    _appNotifications = [];
     _cancelSubscriptions();
+  }
+
+  // ============ NOTIFICATIONS ============
+  
+  void _addNotificationToHistory(String title, String body) {
+    if (!_notificationsEnabled) return;
+    
+    final notification = AppNotification(
+      id: const Uuid().v4(),
+      title: title,
+      body: body,
+      timestamp: DateTime.now(),
+      isRead: false,
+    );
+    _appNotifications.insert(0, notification);
+    _localStorage.setNotifications(_appNotifications);
+    // Use Future.microtask to avoid calling notifyListeners() during build/state update if not safe
+    Future.microtask(() => notifyListeners());
+  }
+
+  void markNotificationAsRead(String id) {
+    final index = _appNotifications.indexWhere((n) => n.id == id);
+    if (index != -1) {
+      _appNotifications[index].isRead = true;
+      _localStorage.setNotifications(_appNotifications);
+      notifyListeners();
+    }
+  }
+  
+  void markAllNotificationsAsRead() {
+    for (var n in _appNotifications) {
+      n.isRead = true;
+    }
+    _localStorage.setNotifications(_appNotifications);
+    notifyListeners();
+  }
+  
+  void clearAllNotifications() {
+    _appNotifications.clear();
+    _localStorage.setNotifications(_appNotifications);
+    notifyListeners();
+  }
+
+  void toggleNotificationsEnabled(bool value) {
+    _notificationsEnabled = value;
+    _localStorage.setNotificationsEnabled(value);
+    
+    // Manage scheduled notifications based on preference
+    if (_notificationsEnabled) {
+      NotificationService.instance.rescheduleAll(
+        bills: _utilityBills,
+        debts: _debts,
+        maintenanceTasks: _maintenanceTasks,
+      );
+    } else {
+      NotificationService.instance.cancelAllScheduled();
+    }
+    
+    notifyListeners();
   }
 
   // ============ AUTH ============
@@ -367,8 +461,9 @@ class AppState extends ChangeNotifier {
       name: _firebaseUser!.displayName ?? 'User',
       email: _firebaseUser!.email ?? '',
       householdId: householdId,
-      role: 'Admin',
-      avatar: '👑',
+      role: _userProfile?['role'] ?? 'Member',
+      avatar: _userProfile?['avatar'] ?? '👤',
+      isAdmin: true,
     );
 
     _householdId = householdId;
@@ -398,6 +493,7 @@ class AppState extends ChangeNotifier {
         householdId: inviteCode,
         role: 'Member',
         avatar: '👤',
+        isAdmin: false,
       );
 
       _householdId = inviteCode;
@@ -670,7 +766,47 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> deleteFamilyMember(String id) async {
+    if (_householdId == null) return;
+    // Remove from household members array in Firestore
+    await _firebase.removeMemberFromHousehold(
+      householdId: _householdId!,
+      userId: id,
+    );
     _familyMembers.removeWhere((m) => m.id == id);
+    notifyListeners();
+  }
+
+  Future<void> toggleMemberAdminRole(String memberId, bool makeAdmin) async {
+    if (_householdId == null || _firebaseUser == null) return;
+    // Only admin can do this
+    if (!isAdmin) return;
+
+    final idx = _familyMembers.indexWhere((m) => m.id == memberId);
+    if (idx == -1) return;
+
+    final member = _familyMembers[idx];
+
+    // Update the isAdmin field in Firebase users collection
+    await _firebase.saveUserProfile(
+      uid: memberId,
+      name: member.name,
+      email: member.email,
+      role: member.role,
+      avatar: member.avatar,
+      householdId: _householdId,
+      isAdmin: makeAdmin,
+    );
+
+    // Update local list
+    _familyMembers[idx] = FamilyMember(
+      id: member.id,
+      name: member.name,
+      nickname: member.nickname,
+      email: member.email,
+      role: member.role,
+      avatar: member.avatar,
+      isAdmin: makeAdmin,
+    );
     notifyListeners();
   }
 

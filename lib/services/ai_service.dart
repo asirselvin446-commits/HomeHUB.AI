@@ -1151,10 +1151,7 @@ class AIService {
       'overall': overallScore,
     };
   }
-<<<<<<< HEAD
-=======
-
-  // AI Chat Response
+  // AI Chat Response (Legacy)
   static AICommand getChatResponse({
     required String question,
     required List<MaintenanceTask> maintenanceTasks,
@@ -1361,5 +1358,4 @@ class AIService {
         '• "How much did we spend on groceries?"\n'
         'Try asking or commanding me!');
   }
->>>>>>> 93e0ebe (Auto-sync backup: 2026-03-12 14:52:42)
 }

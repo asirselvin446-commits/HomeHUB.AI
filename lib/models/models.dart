@@ -124,8 +124,8 @@ class HouseholdTask {
         priority: json['priority'] ?? 'medium',
         notes: json['notes'],
         createdAt: json['createdAt'] != null
-            ? (json['createdAt'] is Timestamp 
-                ? (json['createdAt'] as Timestamp).toDate() 
+            ? (json['createdAt'] is Timestamp
+                ? (json['createdAt'] as Timestamp).toDate()
                 : DateTime.parse(json['createdAt'].toString()))
             : DateTime.now(),
       );
@@ -170,7 +170,6 @@ class GroceryItem {
         addedBy: json['addedBy'],
       );
 }
-
 
 class Expense {
   String id;
@@ -359,6 +358,7 @@ class FamilyMember {
   String email;
   String role;
   String avatar;
+  bool isAdmin;
 
   FamilyMember({
     required this.id,
@@ -367,6 +367,7 @@ class FamilyMember {
     required this.email,
     this.role = 'Member',
     this.avatar = '👤',
+    this.isAdmin = false,
   });
 
   Map<String, dynamic> toJson() => {
@@ -376,6 +377,7 @@ class FamilyMember {
         'email': email,
         'role': role,
         'avatar': avatar,
+        'isAdmin': isAdmin,
       };
 
   factory FamilyMember.fromJson(Map<String, dynamic> json) => FamilyMember(
@@ -385,6 +387,7 @@ class FamilyMember {
         email: json['email'],
         role: json['role'] ?? 'Member',
         avatar: json['avatar'] ?? '👤',
+        isAdmin: json['isAdmin'] ?? false,
       );
 }
 
@@ -467,4 +470,37 @@ class AICommand {
     this.actionType = AIActionType.none,
     this.actionData,
   });
+}
+
+class AppNotification {
+  String id;
+  String title;
+  String body;
+  DateTime timestamp;
+  bool isRead;
+
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    DateTime? timestamp,
+    this.isRead = false,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'body': body,
+        'timestamp': timestamp.toIso8601String(),
+        'isRead': isRead,
+      };
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) =>
+      AppNotification(
+        id: json['id'],
+        title: json['title'],
+        body: json['body'],
+        timestamp: DateTime.parse(json['timestamp']),
+        isRead: json['isRead'] ?? false,
+      );
 }
