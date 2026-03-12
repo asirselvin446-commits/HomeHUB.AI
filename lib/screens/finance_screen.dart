@@ -83,10 +83,10 @@ class _FinanceScreenState extends State<FinanceScreen>
             padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
-                _tabChip('💰 Expenses', 0, isDark),
-                _tabChip('💳 Debts', 1, isDark),
-                _tabChip('🎯 Savings', 2, isDark),
-                _tabChip('📄 Bills', 3, isDark),
+                _tabChip('Expenses', 0, isDark),
+                _tabChip('Debts', 1, isDark),
+                _tabChip('Savings', 2, isDark),
+                _tabChip('Bills', 3, isDark),
               ],
             ),
           ),
@@ -98,6 +98,9 @@ class _FinanceScreenState extends State<FinanceScreen>
           _DebtsTab(currencyFormat: currencyFormat),
           _SavingsTab(currencyFormat: currencyFormat),
           _BillsTab(currencyFormat: currencyFormat),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -604,7 +607,7 @@ class _DebtsTab extends StatelessWidget {
       body: state.debts.isEmpty
           ? EmptyState(
               icon: Icons.celebration_rounded,
-              title: 'Debt Free! 🎉',
+              title: 'Debt Free!',
               subtitle: 'You have no debts tracked',
             )
           : ListView(
