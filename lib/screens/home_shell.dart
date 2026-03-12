@@ -8,6 +8,7 @@ import 'grocery_screen.dart';
 import 'finance_screen.dart';
 import 'maintenance_screen.dart';
 import 'more_screen.dart';
+import 'ai_assistant_screen.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -22,6 +23,7 @@ class _HomeShellState extends State<HomeShell> {
   final List<Widget> _screens = [
     DashboardScreen(),
     TasksScreen(),
+    AIAssistantScreen(),
     GroceryScreen(),
     FinanceScreen(),
     MoreScreen(),
@@ -56,8 +58,9 @@ class _HomeShellState extends State<HomeShell> {
                 _navItem(0, Icons.dashboard_rounded, 'Home', isDark),
                 _navItem(1, Icons.task_alt_rounded, 'Tasks', isDark),
                 _centerButton(isDark),
-                _navItem(3, Icons.account_balance_wallet_rounded, 'Finance', isDark),
-                _navItem(4, Icons.more_horiz_rounded, 'More', isDark),
+                _navItem(3, Icons.shopping_cart_rounded, 'Grocery', isDark),
+                _navItem(4, Icons.account_balance_wallet_rounded, 'Finance', isDark),
+                _navItem(5, Icons.more_horiz_rounded, 'More', isDark),
               ],
             ),
           ),
@@ -138,9 +141,9 @@ class _HomeShellState extends State<HomeShell> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_rounded, color: Colors.white, size: 22),
+            Icon(Icons.auto_awesome, color: Colors.white, size: 22),
             Text(
-              'Grocery',
+              'AI Assist',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 8,
