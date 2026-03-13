@@ -5,6 +5,8 @@ import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -46,10 +48,10 @@ class _FinanceScreenState extends State<FinanceScreen>
         margin: EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
           color: selected
-              ? AppTheme.primaryDark
+              ? AppColors.primary
               : isDark
-                  ? AppTheme.darkCard
-                  : AppTheme.lightCard,
+                  ? AppColors.darkCard
+                  : AppColors.lightCard,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
@@ -60,8 +62,8 @@ class _FinanceScreenState extends State<FinanceScreen>
             color: selected
                 ? Colors.white
                 : isDark
-                    ? AppTheme.darkTextSecondary
-                    : AppTheme.lightTextSecondary,
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
           ),
         ),
       ),
@@ -140,22 +142,22 @@ class _ExpensesTab extends StatelessWidget {
               margin: EdgeInsets.only(bottom: 12),
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppTheme.accentBlue.withOpacity(0.1),
+                color: AppColors.info.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.accentBlue.withOpacity(0.3)),
+                border: Border.all(color: AppColors.info.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock_outline_rounded, size: 16, color: AppTheme.accentBlue),
+                  Icon(Icons.lock_outline_rounded, size: 16, color: AppColors.info),
                   SizedBox(width: 8),
                   Text('You have view-only access to finances',
-                      style: TextStyle(fontSize: 12, color: AppTheme.accentBlue, fontWeight: FontWeight.w600)),
+                      style: TextStyle(fontSize: 12, color: AppColors.info, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
           // Summary Card
           GradientCard(
-            gradient: AppTheme.tealGradient,
+            gradient: AppColors.primaryGradient,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -205,7 +207,7 @@ class _ExpensesTab extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                color: isDark ? AppColors.darkText : AppColors.lightText,
               ),
             ),
             SizedBox(height: 12),
@@ -213,7 +215,7 @@ class _ExpensesTab extends StatelessWidget {
               height: 200,
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: PieChart(
@@ -233,11 +235,11 @@ class _ExpensesTab extends StatelessWidget {
                 e,
               ) {
                 final colors = [
-                  AppTheme.primaryDark,
-                  AppTheme.accentTeal,
-                  AppTheme.accentOrange,
-                  AppTheme.accentYellow,
-                  AppTheme.accentBlue,
+                  AppColors.primary,
+                  AppColors.primary,
+                  AppColors.error,
+                  AppColors.accent,
+                  AppColors.info,
                   Color(0xFFA855F7),
                 ];
                 return Row(
@@ -257,8 +259,8 @@ class _ExpensesTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -275,13 +277,13 @@ class _ExpensesTab extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppTheme.primaryDark.withOpacity(0.1),
-                    AppTheme.accentTeal.withOpacity(0.05),
+                    AppColors.primary.withOpacity(0.1),
+                    AppColors.primary.withOpacity(0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppTheme.primaryDark.withOpacity(0.2),
+                  color: AppColors.primary.withOpacity(0.2),
                 ),
               ),
               child: Column(
@@ -292,7 +294,7 @@ class _ExpensesTab extends StatelessWidget {
                       Icon(
                         Icons.auto_awesome,
                         size: 16,
-                        color: AppTheme.primaryDark,
+                        color: AppColors.primary,
                       ),
                       SizedBox(width: 6),
                       Text(
@@ -300,7 +302,7 @@ class _ExpensesTab extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.primaryDark,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -315,8 +317,8 @@ class _ExpensesTab extends StatelessWidget {
                           fontSize: 12,
                           height: 1.4,
                           color: isDark
-                              ? AppTheme.darkText
-                              : AppTheme.lightText,
+                              ? AppColors.darkText
+                              : AppColors.lightText,
                         ),
                       ),
                     ),
@@ -333,7 +335,7 @@ class _ExpensesTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
             ),
           ),
           SizedBox(height: 8),
@@ -344,7 +346,7 @@ class _ExpensesTab extends StatelessWidget {
                   margin: EdgeInsets.only(bottom: 8),
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -375,8 +377,8 @@ class _ExpensesTab extends StatelessWidget {
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                                 color: isDark
-                                    ? AppTheme.darkText
-                                    : AppTheme.lightText,
+                                    ? AppColors.darkText
+                                    : AppColors.lightText,
                               ),
                             ),
                             Text(
@@ -384,8 +386,8 @@ class _ExpensesTab extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 11,
                                 color: isDark
-                                    ? AppTheme.darkTextSecondary
-                                    : AppTheme.lightTextSecondary,
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.lightTextSecondary,
                               ),
                             ),
                           ],
@@ -396,20 +398,20 @@ class _ExpensesTab extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.accentOrange,
+                          color: AppColors.error,
                         ),
                       ),
                       if (canEdit) ...[                      IconButton(
                         icon: Icon(Icons.edit_rounded, size: 18),
                         color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         onPressed: () =>
                             _showExpenseDialog(context, expense: e),
                       ),
                       IconButton(
                         icon: Icon(Icons.delete_outline_rounded, size: 18),
-                        color: AppTheme.accentOrange,
+                        color: AppColors.error,
                         onPressed: () => state.deleteExpense(e.id),
                       ),
                       ],
@@ -426,11 +428,11 @@ class _ExpensesTab extends StatelessWidget {
 
   List<PieChartSectionData> _buildPieSections(Map<String, double> data) {
     final colors = [
-      AppTheme.primaryDark,
-      AppTheme.accentTeal,
-      AppTheme.accentOrange,
-      AppTheme.accentYellow,
-      AppTheme.accentBlue,
+      AppColors.primary,
+      AppColors.primary,
+      AppColors.error,
+      AppColors.accent,
+      AppColors.info,
       Color(0xFFA855F7),
     ];
     final total = data.values.fold(0.0, (sum, v) => sum + v);
@@ -455,15 +457,15 @@ class _ExpensesTab extends StatelessWidget {
   Color _getCategoryColor(String cat) {
     switch (cat.toLowerCase()) {
       case 'utilities':
-        return AppTheme.primaryDark;
+        return AppColors.primary;
       case 'groceries':
-        return AppTheme.accentTeal;
+        return AppColors.primary;
       case 'maintenance':
-        return AppTheme.accentYellow;
+        return AppColors.accent;
       case 'food':
-        return AppTheme.accentOrange;
+        return AppColors.error;
       default:
-        return AppTheme.accentBlue;
+        return AppColors.info;
     }
   }
 
@@ -493,8 +495,8 @@ class _ExpensesTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -590,7 +592,7 @@ class _ExpensesTab extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -640,7 +642,7 @@ class _DebtsTab extends StatelessWidget {
               children: [
                 // Total debt summary
                 GradientCard(
-                  gradient: AppTheme.accentGradient,
+                  gradient: AppColors.accentGradient,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -679,7 +681,7 @@ class _DebtsTab extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -693,7 +695,7 @@ class _DebtsTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
               if (state.canEditFinance)
@@ -704,8 +706,8 @@ class _DebtsTab extends StatelessWidget {
                     icon: Icon(
                       Icons.edit_rounded,
                       color: isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.lightTextSecondary,
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                       size: 20,
                     ),
                     onPressed: () => _showDebtDialog(context, debt: debt),
@@ -713,7 +715,7 @@ class _DebtsTab extends StatelessWidget {
                   IconButton(
                     icon: Icon(
                       Icons.delete_outline_rounded,
-                      color: AppTheme.accentOrange,
+                      color: AppColors.error,
                       size: 20,
                     ),
                     onPressed: () => state.deleteDebt(debt.id),
@@ -729,8 +731,8 @@ class _DebtsTab extends StatelessWidget {
             child: LinearProgressIndicator(
               value: debt.progressPercent,
               minHeight: 10,
-              backgroundColor: AppTheme.primaryDark.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation(AppTheme.accentTeal),
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
           SizedBox(height: 8),
@@ -741,7 +743,7 @@ class _DebtsTab extends StatelessWidget {
                 'Paid: ${currencyFormat.format(debt.paidAmount)}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppTheme.accentTeal,
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -750,8 +752,8 @@ class _DebtsTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.lightTextSecondary,
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
             ],
@@ -782,7 +784,7 @@ class _DebtsTab extends StatelessWidget {
             child: OutlinedButton(
               onPressed: () => _showPaymentDialog(context, debt, state),
               style: OutlinedButton.styleFrom(
-                side: BorderSide(color: AppTheme.accentTeal),
+                side: BorderSide(color: AppColors.primary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -790,7 +792,7 @@ class _DebtsTab extends StatelessWidget {
               child: Text(
                 'Make Payment',
                 style: TextStyle(
-                  color: AppTheme.accentTeal,
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -811,8 +813,8 @@ class _DebtsTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               color: isDark
-                  ? AppTheme.darkTextSecondary
-                  : AppTheme.lightTextSecondary,
+                  ? AppColors.darkTextSecondary
+                  : AppColors.lightTextSecondary,
             ),
           ),
           Text(
@@ -820,7 +822,7 @@ class _DebtsTab extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
             ),
           ),
         ],
@@ -853,7 +855,7 @@ class _DebtsTab extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryDark,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: Text('Pay'),
@@ -879,8 +881,8 @@ class _DebtsTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -967,7 +969,7 @@ class _DebtsTab extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryDark,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -1030,7 +1032,7 @@ class _SavingsTab extends StatelessWidget {
       margin: EdgeInsets.only(bottom: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -1049,7 +1051,7 @@ class _SavingsTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                        color: isDark ? AppColors.darkText : AppColors.lightText,
                       ),
                     ),
                     Text(
@@ -1057,8 +1059,8 @@ class _SavingsTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -1069,7 +1071,7 @@ class _SavingsTab extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppTheme.accentTeal,
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -1080,8 +1082,8 @@ class _SavingsTab extends StatelessWidget {
             child: LinearProgressIndicator(
               value: goal.progressPercent,
               minHeight: 8,
-              backgroundColor: AppTheme.accentTeal.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation(AppTheme.accentTeal),
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              valueColor: AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
           SizedBox(height: 12),
@@ -1093,8 +1095,8 @@ class _SavingsTab extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary,
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
             ],
@@ -1107,7 +1109,7 @@ class _SavingsTab extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => _showAddContribution(context, goal, state),
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: AppTheme.accentTeal),
+                    side: BorderSide(color: AppColors.primary),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -1115,7 +1117,7 @@ class _SavingsTab extends StatelessWidget {
                   child: Text(
                     'Add Savings',
                     style: TextStyle(
-                      color: AppTheme.accentTeal,
+                      color: AppColors.primary,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1127,8 +1129,8 @@ class _SavingsTab extends StatelessWidget {
                 icon: Icon(
                   Icons.edit_rounded,
                   color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.lightTextSecondary,
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                   size: 20,
                 ),
                 onPressed: () => _showSavingsDialog(context, goal: goal),
@@ -1136,7 +1138,7 @@ class _SavingsTab extends StatelessWidget {
               IconButton(
                 icon: Icon(
                   Icons.delete_outline_rounded,
-                  color: AppTheme.accentOrange,
+                  color: AppColors.error,
                   size: 20,
                 ),
                 onPressed: () => state.deleteSavingsGoal(goal.id),
@@ -1177,7 +1179,7 @@ class _SavingsTab extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryDark,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: Text('Add'),
@@ -1201,8 +1203,8 @@ class _SavingsTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1245,7 +1247,7 @@ class _SavingsTab extends StatelessWidget {
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: icon == e
-                                ? AppTheme.primaryDark.withOpacity(0.2)
+                                ? AppColors.primary.withOpacity(0.2)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1307,7 +1309,7 @@ class _SavingsTab extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1358,10 +1360,10 @@ class _BillsTab extends StatelessWidget {
               padding: EdgeInsets.all(20),
               children: bills.map((bill) {
                 Color statusColor = bill.isPaid
-                    ? AppTheme.accentTeal
+                    ? AppColors.primary
                     : bill.isOverdue
-                    ? AppTheme.accentOrange
-                    : AppTheme.primaryDark;
+                    ? AppColors.error
+                    : AppColors.primary;
                 IconData typeIcon;
                 switch (bill.type.toLowerCase()) {
                   case 'electricity':
@@ -1384,11 +1386,11 @@ class _BillsTab extends StatelessWidget {
                   margin: EdgeInsets.only(bottom: 10),
                   padding: EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
                     borderRadius: BorderRadius.circular(14),
                     border: bill.isOverdue && !bill.isPaid
                         ? Border.all(
-                            color: AppTheme.accentOrange.withOpacity(0.4),
+                            color: AppColors.error.withOpacity(0.4),
                           )
                         : null,
                   ),
@@ -1414,8 +1416,8 @@ class _BillsTab extends StatelessWidget {
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: isDark
-                                    ? AppTheme.darkText
-                                    : AppTheme.lightText,
+                                    ? AppColors.darkText
+                                    : AppColors.lightText,
                               ),
                             ),
                             Text(
@@ -1439,8 +1441,8 @@ class _BillsTab extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: isDark
-                              ? AppTheme.darkText
-                              : AppTheme.lightText,
+                              ? AppColors.darkText
+                              : AppColors.lightText,
                         ),
                       ),
                       SizedBox(width: 8),
@@ -1451,15 +1453,15 @@ class _BillsTab extends StatelessWidget {
                           height: 28,
                           decoration: BoxDecoration(
                             color: bill.isPaid
-                                ? AppTheme.accentTeal
+                                ? AppColors.primary
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: bill.isPaid
-                                  ? AppTheme.accentTeal
+                                  ? AppColors.primary
                                   : isDark
-                                  ? AppTheme.darkTextSecondary
-                                  : AppTheme.lightTextSecondary,
+                                  ? AppColors.darkTextSecondary
+                                  : AppColors.lightTextSecondary,
                               width: 2,
                             ),
                           ),
@@ -1471,8 +1473,8 @@ class _BillsTab extends StatelessWidget {
                       IconButton(
                         icon: Icon(Icons.edit_rounded, size: 20),
                         color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                         onPressed: () => _showBillDialog(context, bill: bill),
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
@@ -1480,7 +1482,7 @@ class _BillsTab extends StatelessWidget {
                       SizedBox(width: 8),
                       IconButton(
                         icon: Icon(Icons.delete_outline_rounded, size: 20),
-                        color: AppTheme.accentOrange,
+                        color: AppColors.error,
                         onPressed: () => state.deleteUtilityBill(bill.id),
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
@@ -1505,8 +1507,8 @@ class _BillsTab extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -1622,7 +1624,7 @@ class _BillsTab extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

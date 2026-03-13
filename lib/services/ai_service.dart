@@ -157,6 +157,50 @@ class AIService {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  //  PROACTIVE BRIEFING
+  // ═══════════════════════════════════════════════════════════════
+
+  static String generateProactiveBriefing({
+    required List<HouseholdTask> householdTasks,
+    required List<Expense> expenses,
+  }) {
+    final hour = DateTime.now().hour;
+    String greeting = 'Hello';
+    if (hour < 12) greeting = 'Good morning';
+    else if (hour < 17) greeting = 'Good afternoon';
+    else greeting = 'Good evening';
+
+    final pendingTasks = householdTasks.where((t) => !t.isCompleted).toList();
+    final overdueTasks = pendingTasks.where((t) => t.isOverdue).toList();
+    
+    final today = DateTime.now();
+    final todayExpenses = expenses.where((e) => 
+      e.date.year == today.year && e.date.month == today.month && e.date.day == today.day
+    ).fold(0.0, (sum, e) => sum + e.amount);
+
+    String briefing = '$greeting! 👋\n\n';
+    
+    if (todayExpenses > 0) {
+      briefing += 'You\'ve spent **${_cur.format(todayExpenses)}** today. ';
+    } else {
+      briefing += 'No expenses recorded today yet. ';
+    }
+
+    if (pendingTasks.isNotEmpty) {
+      if (overdueTasks.isNotEmpty) {
+        briefing += 'You have **${pendingTasks.length} pending tasks**, including **${overdueTasks.length} overdue**.';
+      } else {
+        briefing += 'You have **${pendingTasks.length} pending tasks** on your plate.';
+      }
+    } else {
+      briefing += 'You\'re all caught up on tasks! 🎉';
+    }
+
+    briefing += '\n\nHow can I help you right now?';
+    return briefing;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   //  LLM-POWERED PROCESSING (Gemini)
   // ═══════════════════════════════════════════════════════════════
 
@@ -171,6 +215,7 @@ class AIService {
     required List<Debt> debts,
     required List<UtilityBill> bills,
     required double monthlyIncome,
+    List<ChatMessage> history = const [],
   }) async {
     // If LLM is not configured, use the regex engine directly
     if (!LLMService.isConfigured) {
@@ -187,7 +232,7 @@ class AIService {
     }
 
     try {
-      final json = await LLMService.sendMessage(message);
+      final json = await LLMService.sendMessage(message, history: history);
       final intent = json['intent'] as String? ?? '';
 
       switch (intent) {
@@ -339,9 +384,269 @@ class AIService {
                 'Happy to help! Just ask anytime.',
                 'Anytime! I\'m here whenever you need me 👍',
               ]));
+            case 'savings':
+              return AIResult(reply: _querySavings([])); // placeholder — actual data passed via action
             default:
               return AIResult(reply: _helpMessage());
           }
+
+        // ── DELETE TASK ──
+        case 'delete_task':
+          final keyword = (json['task_title'] ?? '').toString().toLowerCase();
+          final task = householdTasks.firstWhere(
+            (t) => t.title.toLowerCase().contains(keyword),
+            orElse: () => HouseholdTask(id: '', title: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: 'Task deleted: **${task.title}** 🗑️',
+              action: AIAction(type: 'delete_task', data: {'id': task.id}),
+            );
+          }
+          return AIResult(reply: 'No task found matching "$keyword".');
+
+        // ── ADD BILL ──
+        case 'add_bill':
+          final type = _titleCase(json['type'] ?? 'Other');
+          final amount = (json['amount'] ?? 0).toDouble();
+          DateTime dueDate = DateTime.now().add(const Duration(days: 15));
+          final dueStr = json['due_date']?.toString().toLowerCase();
+          if (dueStr == 'today') dueDate = DateTime.now();
+          else if (dueStr == 'tomorrow') dueDate = DateTime.now().add(const Duration(days: 1));
+          else if (dueStr == 'next week') dueDate = DateTime.now().add(const Duration(days: 7));
+          else if (dueStr != null && dueStr.contains('day')) {
+            final d = RegExp(r'\d+').firstMatch(dueStr);
+            if (d != null) dueDate = DateTime.now().add(Duration(days: int.tryParse(d.group(0)!) ?? 15));
+          }
+          return AIResult(
+            reply: '**$type** bill of ${_cur.format(amount)} added, due **${DateFormat('MMM dd').format(dueDate)}** 📄',
+            action: AIAction(type: 'add_bill', data: {
+              'type': type, 'amount': amount,
+              'billDate': DateTime.now().toIso8601String(),
+              'dueDate': dueDate.toIso8601String(),
+            }),
+          );
+
+        // ── MARK BILL PAID ──
+        case 'mark_bill_paid':
+          final keyword = (json['bill_type'] ?? '').toString().toLowerCase();
+          final bill = bills.firstWhere(
+            (b) => !b.isPaid && b.type.toLowerCase().contains(keyword),
+            orElse: () => UtilityBill(id: '', type: '', amount: 0, billDate: DateTime.now(), dueDate: DateTime.now()),
+          );
+          if (bill.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${bill.type}** bill marked as paid ✅',
+              action: AIAction(type: 'mark_bill_paid', data: {'id': bill.id}),
+            );
+          }
+          return AIResult(reply: 'No unpaid bill found matching "$keyword".');
+
+        // ── DELETE BILL ──
+        case 'delete_bill':
+          final keyword = (json['bill_type'] ?? '').toString().toLowerCase();
+          final bill = bills.firstWhere(
+            (b) => b.type.toLowerCase().contains(keyword),
+            orElse: () => UtilityBill(id: '', type: '', amount: 0, billDate: DateTime.now(), dueDate: DateTime.now()),
+          );
+          if (bill.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${bill.type}** bill deleted 🗑️',
+              action: AIAction(type: 'delete_bill', data: {'id': bill.id}),
+            );
+          }
+          return AIResult(reply: 'No bill found matching "$keyword".');
+
+        // ── ADD DEBT ──
+        case 'add_debt':
+          final name = _titleCase(json['name'] ?? 'Loan');
+          final totalAmount = (json['total_amount'] ?? 0).toDouble();
+          final monthlyPayment = (json['monthly_payment'] ?? 0).toDouble();
+          final interestRate = (json['interest_rate'] ?? 0).toDouble();
+          if (totalAmount <= 0) {
+            return AIResult(reply: 'Please specify the total loan amount. E.g., "add car loan 500000 monthly 10000"');
+          }
+          return AIResult(
+            reply: 'Debt added: **$name** — ${_cur.format(totalAmount)} 💳',
+            action: AIAction(type: 'add_debt', data: {
+              'name': name, 'totalAmount': totalAmount,
+              'monthlyPayment': monthlyPayment, 'interestRate': interestRate,
+            }),
+          );
+
+        // ── PAY DEBT ──
+        case 'pay_debt':
+          final keyword = (json['debt_name'] ?? '').toString().toLowerCase();
+          final amount = (json['amount'] ?? 0).toDouble();
+          final debt = debts.firstWhere(
+            (d) => d.name.toLowerCase().contains(keyword),
+            orElse: () => Debt(id: '', name: '', totalAmount: 0),
+          );
+          if (debt.id.isNotEmpty && amount > 0) {
+            return AIResult(
+              reply: '${_cur.format(amount)} payment recorded for **${debt.name}** 💰',
+              action: AIAction(type: 'pay_debt', data: {'id': debt.id, 'amount': amount}),
+            );
+          }
+          return AIResult(reply: amount <= 0
+              ? 'Please specify the payment amount.'
+              : 'No debt found matching "$keyword".');
+
+        // ── DELETE DEBT ──
+        case 'delete_debt':
+          final keyword = (json['debt_name'] ?? '').toString().toLowerCase();
+          final debt = debts.firstWhere(
+            (d) => d.name.toLowerCase().contains(keyword),
+            orElse: () => Debt(id: '', name: '', totalAmount: 0),
+          );
+          if (debt.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${debt.name}** debt removed 🗑️',
+              action: AIAction(type: 'delete_debt', data: {'id': debt.id}),
+            );
+          }
+          return AIResult(reply: 'No debt found matching "$keyword".');
+
+        // ── ADD SAVINGS GOAL ──
+        case 'add_savings_goal':
+          final name = _titleCase(json['name'] ?? 'Savings');
+          final targetAmount = (json['target_amount'] ?? 0).toDouble();
+          final monthlyContribution = (json['monthly_contribution'] ?? 0).toDouble();
+          final icon = json['icon'] ?? '🎯';
+          if (targetAmount <= 0) {
+            return AIResult(reply: 'Please specify a target amount. E.g., "save for vacation 100000"');
+          }
+          return AIResult(
+            reply: 'Savings goal created: **$name** — Target ${_cur.format(targetAmount)} $icon',
+            action: AIAction(type: 'add_savings_goal', data: {
+              'name': name, 'targetAmount': targetAmount,
+              'monthlyContribution': monthlyContribution, 'icon': icon,
+            }),
+          );
+
+        // ── DEPOSIT SAVINGS ──
+        case 'deposit_savings':
+          final keyword = (json['goal_name'] ?? '').toString().toLowerCase();
+          final amount = (json['amount'] ?? 0).toDouble();
+          // Try to find matching savings goal — actual match done in app_state
+          if (amount <= 0) {
+            return AIResult(reply: 'Please specify the amount to save.');
+          }
+          return AIResult(
+            reply: '${_cur.format(amount)} deposited into **${_titleCase(keyword)}** savings 💰',
+            action: AIAction(type: 'deposit_savings', data: {
+              'goalName': keyword, 'amount': amount,
+            }),
+          );
+
+        // ── DELETE SAVINGS ──
+        case 'delete_savings':
+          final keyword = (json['goal_name'] ?? '').toString().toLowerCase();
+          return AIResult(
+            reply: 'Savings goal **${_titleCase(keyword)}** deleted 🗑️',
+            action: AIAction(type: 'delete_savings', data: {'goalName': keyword}),
+          );
+
+        // ── COMPLETE MAINTENANCE ──
+        case 'complete_maintenance':
+          final keyword = (json['task_name'] ?? '').toString().toLowerCase();
+          final task = maintenanceTasks.firstWhere(
+            (t) => !t.isCompleted && t.name.toLowerCase().contains(keyword),
+            orElse: () => MaintenanceTask(id: '', name: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${task.name}** marked as completed ✅',
+              action: AIAction(type: 'complete_maintenance', data: {'id': task.id}),
+            );
+          }
+          return AIResult(reply: 'No maintenance task found matching "$keyword".');
+
+        // ── DELETE MAINTENANCE ──
+        case 'delete_maintenance':
+          final keyword = (json['task_name'] ?? '').toString().toLowerCase();
+          final task = maintenanceTasks.firstWhere(
+            (t) => t.name.toLowerCase().contains(keyword),
+            orElse: () => MaintenanceTask(id: '', name: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${task.name}** deleted 🗑️',
+              action: AIAction(type: 'delete_maintenance', data: {'id': task.id}),
+            );
+          }
+          return AIResult(reply: 'No maintenance task found matching "$keyword".');
+
+        // ── ADD EMERGENCY CONTACT ──
+        case 'add_emergency_contact':
+          final name = _titleCase(json['name'] ?? 'Contact');
+          final phone = json['phone'] ?? '';
+          final category = _titleCase(json['category'] ?? 'Emergency');
+          if (phone.isEmpty) {
+            return AIResult(reply: 'Please provide a phone number. E.g., "add plumber 9876543210"');
+          }
+          return AIResult(
+            reply: 'Emergency contact added: **$name** ($phone) 📞',
+            action: AIAction(type: 'add_emergency_contact', data: {
+              'name': name, 'phone': phone, 'category': category,
+            }),
+          );
+
+        // ── DELETE EMERGENCY CONTACT ──
+        case 'delete_emergency_contact':
+          final keyword = (json['name'] ?? '').toString().toLowerCase();
+          return AIResult(
+            reply: 'Emergency contact **${_titleCase(keyword)}** deleted 🗑️',
+            action: AIAction(type: 'delete_emergency_contact', data: {'name': keyword}),
+          );
+
+        // ── CLEAR PURCHASED GROCERIES ──
+        case 'clear_purchased_groceries':
+          return AIResult(
+            reply: 'All purchased groceries cleared from the list 🧹',
+            action: AIAction(type: 'clear_purchased_groceries', data: {}),
+          );
+
+        // ── DELETE EXPENSE ──
+        case 'delete_expense':
+          final keyword = (json['title'] ?? '').toString().toLowerCase();
+          final expense = expenses.firstWhere(
+            (e) => e.title.toLowerCase().contains(keyword),
+            orElse: () => Expense(id: '', title: '', amount: 0, category: '', date: DateTime.now()),
+          );
+          if (expense.id.isNotEmpty) {
+            return AIResult(
+              reply: 'Expense **${expense.title}** deleted 🗑️',
+              action: AIAction(type: 'delete_expense', data: {'id': expense.id}),
+            );
+          }
+          return AIResult(reply: 'No expense found matching "$keyword".');
+
+        // ── SET INCOME ──
+        case 'set_income':
+          final amount = (json['amount'] ?? 0).toDouble();
+          if (amount <= 0) {
+            return AIResult(reply: 'Please specify an income amount. E.g., "set income 50000"');
+          }
+          return AIResult(
+            reply: 'Monthly income set to **${_cur.format(amount)}** 📊',
+            action: AIAction(type: 'set_income', data: {'amount': amount}),
+          );
+
+        // ── TOGGLE THEME ──
+        case 'toggle_theme':
+          return AIResult(
+            reply: 'Theme switched! 🎨',
+            action: AIAction(type: 'toggle_theme', data: {}),
+          );
+
+        // ── NAVIGATE ──
+        case 'navigate':
+          final screen = json['screen'] ?? 'home';
+          return AIResult(
+            reply: 'Navigating to **${_titleCase(screen)}** 📱',
+            action: AIAction(type: 'navigate', data: {'screen': screen}),
+          );
 
         default:
           // Unknown intent from LLM — fall back to regex
@@ -927,6 +1232,20 @@ class AIService {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  //  QUERY: Savings
+  // ═══════════════════════════════════════════════════════════════
+
+  static String _querySavings(List<SavingsGoal> goals) {
+    if (goals.isEmpty) return 'No savings goals set yet. Try "save for vacation 100000" to get started! 🎯';
+    String r = '**${goals.length} savings goal${goals.length > 1 ? 's' : ''}**:\n\n';
+    for (var g in goals) {
+      final pct = (g.progressPercent * 100).toInt();
+      r += '• ${g.icon} ${g.name}: ${_cur.format(g.currentAmount)} / ${_cur.format(g.targetAmount)} ($pct%)\n';
+    }
+    return r.trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   //  QUERY: Bills
   // ═══════════════════════════════════════════════════════════════
 
@@ -1358,4 +1677,204 @@ class AIService {
         '• "How much did we spend on groceries?"\n'
         'Try asking or commanding me!');
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  //  AI-TRIGGERED SMART ALERTS
+  // ═══════════════════════════════════════════════════════════════
+
+  /// Scans all household data and returns proactive smart alerts.
+  /// Called on app open, throttled externally to max once per 6 hours.
+  static List<SmartAlert> generateSmartAlerts({
+    required List<HouseholdTask> householdTasks,
+    required List<GroceryItem> groceryItems,
+    required List<Expense> expenses,
+    required List<Debt> debts,
+    required List<UtilityBill> bills,
+    required List<MaintenanceTask> maintenanceTasks,
+    required double monthlyIncome,
+  }) {
+    final alerts = <SmartAlert>[];
+    final now = DateTime.now();
+
+    // ── 1. Budget Alarm: spending > 80% of income ──
+    if (monthlyIncome > 0) {
+      final thisMonth = expenses.where(
+        (e) => e.date.month == now.month && e.date.year == now.year,
+      );
+      final total = thisMonth.fold(0.0, (s, e) => s + e.amount);
+      final pct = total / monthlyIncome;
+      if (pct >= 0.95) {
+        alerts.add(SmartAlert(
+          type: 'budget',
+          title: '🚨 Budget Exceeded!',
+          body: 'You\'ve spent ${_cur.format(total)} — ${(pct * 100).toInt()}% of your ${_cur.format(monthlyIncome)} monthly budget.',
+          priority: 'critical',
+        ));
+      } else if (pct >= 0.80) {
+        alerts.add(SmartAlert(
+          type: 'budget',
+          title: '⚠️ Budget Alert',
+          body: 'You\'ve used ${(pct * 100).toInt()}% of your monthly budget (${_cur.format(total)} of ${_cur.format(monthlyIncome)}).',
+          priority: 'high',
+        ));
+      }
+    }
+
+    // ── 2. Overdue Bills ──
+    final overdueBills = bills.where((b) => !b.isPaid && b.isOverdue).toList();
+    for (final bill in overdueBills) {
+      final daysOverdue = now.difference(bill.dueDate).inDays;
+      alerts.add(SmartAlert(
+        type: 'bill',
+        title: '🚨 Overdue: ${bill.type} Bill',
+        body: '${_cur.format(bill.amount)} was due ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} ago.',
+        priority: daysOverdue > 3 ? 'critical' : 'high',
+      ));
+    }
+
+    // ── 3. Overdue Tasks ──
+    final overdueTasks = householdTasks.where(
+      (t) => !t.isCompleted && t.isOverdue,
+    ).toList();
+    if (overdueTasks.length >= 3) {
+      alerts.add(SmartAlert(
+        type: 'task',
+        title: '📋 ${overdueTasks.length} Overdue Tasks',
+        body: 'Tasks need attention: ${overdueTasks.take(3).map((t) => t.title).join(', ')}${overdueTasks.length > 3 ? '...' : ''}',
+        priority: 'high',
+      ));
+    } else if (overdueTasks.isNotEmpty) {
+      alerts.add(SmartAlert(
+        type: 'task',
+        title: '📋 Overdue Task${overdueTasks.length > 1 ? 's' : ''}',
+        body: overdueTasks.map((t) => t.title).join(', '),
+        priority: 'medium',
+      ));
+    }
+
+    // ── 4. Overdue Maintenance ──
+    final overdueMaint = maintenanceTasks.where(
+      (t) => !t.isCompleted && t.isOverdue,
+    ).toList();
+    for (final task in overdueMaint) {
+      final daysOverdue = task.nextDue != null
+          ? now.difference(task.nextDue!).inDays
+          : 0;
+      alerts.add(SmartAlert(
+        type: 'maintenance',
+        title: '🔧 ${task.name} Overdue',
+        body: 'Was due ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} ago. Schedule service soon.',
+        priority: daysOverdue > 7 ? 'high' : 'medium',
+      ));
+    }
+
+    // ── 5. Maintenance due soon (within 3 days) ──
+    final dueSoonMaint = maintenanceTasks.where(
+      (t) => !t.isCompleted && t.isDueSoon && !t.isOverdue && (t.daysUntilDue ?? 999) <= 3,
+    ).toList();
+    for (final task in dueSoonMaint) {
+      alerts.add(SmartAlert(
+        type: 'maintenance',
+        title: '🔧 ${task.name} Due Soon',
+        body: 'Scheduled in ${task.daysUntilDue ?? 0} day${(task.daysUntilDue ?? 0) > 1 ? 's' : ''}.',
+        priority: 'medium',
+      ));
+    }
+
+    // ── 6. Empty Grocery List ──
+    final unpurchased = groceryItems.where((g) => !g.isPurchased).toList();
+    if (groceryItems.isNotEmpty && unpurchased.isEmpty) {
+      alerts.add(SmartAlert(
+        type: 'grocery',
+        title: '🛒 Grocery List Complete',
+        body: 'All items purchased! Time to plan your next shopping trip?',
+        priority: 'low',
+      ));
+    }
+
+    // ── 7. Category Spending Spike ──
+    if (monthlyIncome > 0) {
+      final thisMonth = expenses.where(
+        (e) => e.date.month == now.month && e.date.year == now.year,
+      );
+      final total = thisMonth.fold(0.0, (s, e) => s + e.amount);
+      if (total > 0) {
+        final cats = <String, double>{};
+        for (final e in thisMonth) {
+          cats[e.category] = (cats[e.category] ?? 0) + e.amount;
+        }
+        for (final entry in cats.entries) {
+          if (entry.value / total > 0.40 && entry.value > monthlyIncome * 0.15) {
+            alerts.add(SmartAlert(
+              type: 'spending',
+              title: '💸 High ${entry.key} Spending',
+              body: '${_cur.format(entry.value)} spent on ${entry.key} — ${(entry.value / total * 100).toInt()}% of all spending.',
+              priority: 'medium',
+            ));
+          }
+        }
+      }
+    }
+
+    // ── 8. Weekend Briefing (Saturday) ──
+    if (now.weekday == DateTime.saturday) {
+      final pending = householdTasks.where((t) => !t.isCompleted).length;
+      final upcomingMaint = maintenanceTasks.where(
+        (t) => !t.isCompleted && t.nextDue != null && t.nextDue!.difference(now).inDays <= 7,
+      ).length;
+      final unpaidBillCount = bills.where((b) => !b.isPaid).length;
+
+      final parts = <String>[];
+      if (pending > 0) parts.add('$pending task${pending > 1 ? 's' : ''} pending');
+      if (unpaidBillCount > 0) parts.add('$unpaidBillCount bill${unpaidBillCount > 1 ? 's' : ''} unpaid');
+      if (upcomingMaint > 0) parts.add('$upcomingMaint maintenance due this week');
+
+      if (parts.isNotEmpty) {
+        alerts.add(SmartAlert(
+          type: 'briefing',
+          title: '📊 Weekend Briefing',
+          body: parts.join(' · '),
+          priority: 'low',
+        ));
+      }
+    }
+
+    // ── 9. Debt Payoff Milestone ──
+    for (final debt in debts) {
+      if (debt.totalAmount <= 0) continue;
+      final pct = debt.paidAmount / debt.totalAmount;
+      if (pct >= 0.74 && pct <= 0.76) {
+        alerts.add(SmartAlert(
+          type: 'savings',
+          title: '🎉 ${debt.name} — 75% Paid!',
+          body: '${_cur.format(debt.remainingAmount)} remaining. Keep going!',
+          priority: 'low',
+        ));
+      } else if (pct >= 0.49 && pct <= 0.51) {
+        alerts.add(SmartAlert(
+          type: 'savings',
+          title: '⭐ ${debt.name} — Halfway There!',
+          body: '${_cur.format(debt.paidAmount)} paid of ${_cur.format(debt.totalAmount)}.',
+          priority: 'low',
+        ));
+      }
+    }
+
+    return alerts;
+  }
+}
+
+/// Represents a proactive AI-generated notification alert.
+class SmartAlert {
+  final String type;     // budget, bill, task, maintenance, grocery, spending, briefing, savings
+  final String title;
+  final String body;
+  final String priority; // critical, high, medium, low
+
+  const SmartAlert({
+    required this.type,
+    required this.title,
+    required this.body,
+    this.priority = 'medium',
+  });
 }

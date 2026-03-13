@@ -22,6 +22,12 @@ class StorageService {
   Future<void> setNotificationsEnabled(bool value) =>
       _prefs.setBool('notificationsEnabled', value);
 
+  // Per-category notification preferences
+  bool getNotificationPref(String category) =>
+      _prefs.getBool('notif_$category') ?? true;
+  Future<void> setNotificationPref(String category, bool value) =>
+      _prefs.setBool('notif_$category', value);
+
   // Notification History locally
   List<AppNotification> getNotifications() {
     final String? jsonStr = _prefs.getString('notifications_history');
@@ -39,6 +45,16 @@ class StorageService {
         notifications.map((n) => n.toJson()).toList();
     await _prefs.setString('notifications_history', jsonEncode(mappedList));
   }
+
+  // Smart notification scan throttle
+  DateTime? getLastSmartScanDate() {
+    final ms = _prefs.getInt('lastSmartScanMs');
+    if (ms == null) return null;
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> setLastSmartScanDate(DateTime date) =>
+      _prefs.setInt('lastSmartScanMs', date.millisecondsSinceEpoch);
 
   // Clear local preferences
   Future<void> clear() async => await _prefs.clear();

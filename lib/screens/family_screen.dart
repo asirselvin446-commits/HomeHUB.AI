@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class FamilyScreen extends StatelessWidget {
@@ -38,7 +40,7 @@ class FamilyScreen extends StatelessWidget {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Invite code copied: ${state.householdId!}'),
-                            backgroundColor: AppTheme.accentTeal,
+                            backgroundColor: AppColors.primary,
                           ),
                         );
                       }
@@ -48,7 +50,7 @@ class FamilyScreen extends StatelessWidget {
                     padding: EdgeInsets.all(16),
                     margin: EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
-                      gradient: AppTheme.purpleGradient,
+                      gradient: AppColors.aiGradient,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -91,26 +93,26 @@ class FamilyScreen extends StatelessWidget {
     final isCurrentUser = member.id == state.currentUserId;
 
     // Role badge color
-    Color roleColor = AppTheme.accentTeal;
+    Color roleColor = AppColors.primary;
     if (member.role == 'Father' || member.role == 'Mother') {
-      roleColor = AppTheme.primaryDark;
+      roleColor = AppColors.primary;
     }
 
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
         border: isCurrentUser
-            ? Border.all(color: AppTheme.primaryDark.withOpacity(0.3), width: 1)
+            ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1)
             : null,
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppTheme.primaryDark.withOpacity(0.2),
+            backgroundColor: AppColors.primary.withOpacity(0.2),
             child: Text(
               member.avatar,
               style: TextStyle(fontSize: 24),
@@ -129,7 +131,7 @@ class FamilyScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                          color: isDark ? AppColors.darkText : AppColors.lightText,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -140,7 +142,7 @@ class FamilyScreen extends StatelessWidget {
                         'You',
                         style: TextStyle(
                           fontSize: 11,
-                          color: AppTheme.primaryDark,
+                          color: AppColors.primary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -153,8 +155,8 @@ class FamilyScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary,
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
@@ -170,20 +172,20 @@ class FamilyScreen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   margin: EdgeInsets.only(bottom: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.accentYellow.withOpacity(0.15),
+                    color: AppColors.accent.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.shield_rounded, size: 12, color: AppTheme.accentYellow),
+                      Icon(Icons.shield_rounded, size: 12, color: AppColors.accent),
                       SizedBox(width: 4),
                       Text(
                         'Admin',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.accentYellow,
+                          color: AppColors.accent,
                         ),
                       ),
                     ],
@@ -212,11 +214,11 @@ class FamilyScreen extends StatelessWidget {
             PopupMenuButton<String>(
               icon: Icon(
                 Icons.more_vert_rounded,
-                color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                 size: 20,
               ),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+              color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
               itemBuilder: (ctx) => [
                 // Make Admin / Dismiss Admin
                 if (!member.isAdmin)
@@ -224,7 +226,7 @@ class FamilyScreen extends StatelessWidget {
                     value: 'make_admin',
                     child: Row(
                       children: [
-                        Icon(Icons.shield_rounded, size: 18, color: AppTheme.accentYellow),
+                        Icon(Icons.shield_rounded, size: 18, color: AppColors.accent),
                         SizedBox(width: 10),
                         Text('Make Admin'),
                       ],
@@ -235,7 +237,7 @@ class FamilyScreen extends StatelessWidget {
                     value: 'dismiss_admin',
                     child: Row(
                       children: [
-                        Icon(Icons.shield_outlined, size: 18, color: AppTheme.darkTextSecondary),
+                        Icon(Icons.shield_outlined, size: 18, color: AppColors.darkTextSecondary),
                         SizedBox(width: 10),
                         Text('Dismiss as Admin'),
                       ],
@@ -245,7 +247,7 @@ class FamilyScreen extends StatelessWidget {
                   value: 'edit',
                   child: Row(
                     children: [
-                      Icon(Icons.edit_rounded, size: 18, color: AppTheme.accentTeal),
+                      Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
                       SizedBox(width: 10),
                       Text('Edit Info'),
                     ],
@@ -256,9 +258,9 @@ class FamilyScreen extends StatelessWidget {
                   value: 'remove',
                   child: Row(
                     children: [
-                      Icon(Icons.person_remove_rounded, size: 18, color: AppTheme.accentOrange),
+                      Icon(Icons.person_remove_rounded, size: 18, color: AppColors.error),
                       SizedBox(width: 10),
-                      Text('Remove', style: TextStyle(color: AppTheme.accentOrange)),
+                      Text('Remove', style: TextStyle(color: AppColors.error)),
                     ],
                   ),
                 ),
@@ -271,7 +273,7 @@ class FamilyScreen extends StatelessWidget {
                       title: 'Make Admin',
                       message: 'Make ${member.name} an admin? They will have full control over the household.',
                       confirmLabel: 'Make Admin',
-                      confirmColor: AppTheme.accentYellow,
+                      confirmColor: AppColors.accent,
                       onConfirm: () => state.toggleMemberAdminRole(member.id, true),
                     );
                     break;
@@ -281,7 +283,7 @@ class FamilyScreen extends StatelessWidget {
                       title: 'Dismiss Admin',
                       message: 'Remove admin privileges from ${member.name}?',
                       confirmLabel: 'Dismiss',
-                      confirmColor: AppTheme.accentOrange,
+                      confirmColor: AppColors.error,
                       onConfirm: () => state.toggleMemberAdminRole(member.id, false),
                     );
                     break;
@@ -325,7 +327,7 @@ class FamilyScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: AppTheme.darkTextSecondary)),
+            child: Text('Cancel', style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -360,8 +362,8 @@ class FamilyScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -388,7 +390,7 @@ class FamilyScreen extends StatelessWidget {
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: avatar == e
-                                  ? AppTheme.primaryDark.withOpacity(0.2)
+                                  ? AppColors.primary.withOpacity(0.2)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -434,7 +436,7 @@ class FamilyScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),

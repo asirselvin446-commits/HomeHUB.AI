@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class MaintenanceScreen extends StatelessWidget {
@@ -21,7 +23,7 @@ class MaintenanceScreen extends StatelessWidget {
         title: Text('Maintenance'),
         actions: [
           IconButton(
-            icon: Icon(Icons.lightbulb_outline_rounded, color: AppTheme.accentYellow),
+            icon: Icon(Icons.lightbulb_outline_rounded, color: AppColors.accent),
             onPressed: () => _showAISuggestions(context, suggestions),
           ),
         ],
@@ -47,25 +49,25 @@ class MaintenanceScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppTheme.primaryDark.withOpacity(0.15),
-                          AppTheme.accentTeal.withOpacity(0.1),
+                          AppColors.primary.withOpacity(0.15),
+                          AppColors.primary.withOpacity(0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primaryDark.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.auto_awesome, color: AppTheme.primaryDark, size: 18),
+                            Icon(Icons.auto_awesome, color: AppColors.primary, size: 18),
                             SizedBox(width: 8),
                             Text(
                               'AI Predictions',
                               style: TextStyle(
                                 fontWeight: FontWeight.w700,
-                                color: AppTheme.primaryDark,
+                                color: AppColors.primary,
                                 fontSize: 14,
                               ),
                             ),
@@ -76,7 +78,7 @@ class MaintenanceScreen extends StatelessWidget {
                           suggestions.first,
                           style: TextStyle(
                             fontSize: 13,
-                            color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                            color: isDark ? AppColors.darkText : AppColors.lightText,
                           ),
                         ),
                       ],
@@ -93,16 +95,16 @@ class MaintenanceScreen extends StatelessWidget {
   Widget _buildTaskCard(
       BuildContext context, MaintenanceTask task, bool isDark, AppState state) {
     Color statusColor = task.isOverdue
-        ? AppTheme.accentOrange
+        ? AppColors.error
         : task.isDueSoon
-            ? AppTheme.accentYellow
-            : AppTheme.accentTeal;
+            ? AppColors.accent
+            : AppColors.primary;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: statusColor.withOpacity(0.3)),
       ),
@@ -133,7 +135,7 @@ class MaintenanceScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                        color: isDark ? AppColors.darkText : AppColors.lightText,
                       ),
                     ),
                     SizedBox(height: 2),
@@ -141,7 +143,7 @@ class MaintenanceScreen extends StatelessWidget {
                       task.category,
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],
@@ -149,12 +151,12 @@ class MaintenanceScreen extends StatelessWidget {
               ),
               PopupMenuButton(
                 icon: Icon(Icons.more_vert_rounded,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary),
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                 itemBuilder: (ctx) => [
                   PopupMenuItem(
                     value: 'complete',
                     child: Row(children: [
-                      Icon(Icons.check_circle, color: AppTheme.accentTeal, size: 18),
+                      Icon(Icons.check_circle, color: AppColors.primary, size: 18),
                       SizedBox(width: 8),
                       Text('Mark Serviced'),
                     ]),
@@ -162,7 +164,7 @@ class MaintenanceScreen extends StatelessWidget {
                   PopupMenuItem(
                     value: 'edit',
                     child: Row(children: [
-                      Icon(Icons.edit_rounded, color: AppTheme.accentYellow, size: 18),
+                      Icon(Icons.edit_rounded, color: AppColors.accent, size: 18),
                       SizedBox(width: 8),
                       Text('Edit'),
                     ]),
@@ -170,7 +172,7 @@ class MaintenanceScreen extends StatelessWidget {
                   PopupMenuItem(
                     value: 'delete',
                     child: Row(children: [
-                      Icon(Icons.delete, color: AppTheme.accentOrange, size: 18),
+                      Icon(Icons.delete, color: AppColors.error, size: 18),
                       SizedBox(width: 8),
                       Text('Delete'),
                     ]),
@@ -230,7 +232,7 @@ class MaintenanceScreen extends StatelessWidget {
               '📊 Service history: ${task.history.length} records (every ~${task.recurringDays} days)',
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               ),
             ),
           ],
@@ -243,20 +245,20 @@ class MaintenanceScreen extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardAlt : Color(0xFFF0F2F5),
+        color: isDark ? AppColors.darkCardAlt : Color(0xFFF0F2F5),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary),
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
           SizedBox(width: 4),
           Text(
             text,
             style: TextStyle(
               fontSize: 11,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
             ),
           ),
         ],
@@ -283,8 +285,8 @@ class MaintenanceScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -330,8 +332,8 @@ class MaintenanceScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -403,7 +405,7 @@ class MaintenanceScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

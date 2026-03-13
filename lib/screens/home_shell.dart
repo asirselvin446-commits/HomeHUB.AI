@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import 'dashboard_screen.dart';
 import 'tasks_screen.dart';
 import 'grocery_screen.dart';
 import 'finance_screen.dart';
-import 'maintenance_screen.dart';
 import 'more_screen.dart';
 import 'ai_assistant_screen.dart';
+import 'family_chat_screen.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import '../services/notification_service.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -21,48 +22,91 @@ class _HomeShellState extends State<HomeShell> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    DashboardScreen(),
-    TasksScreen(),
-    GroceryScreen(),
-    FinanceScreen(),
-    MoreScreen(),
-    AIAssistantScreen(),
+    const DashboardScreen(),
+    const TasksScreen(),
+    const FamilyChatScreen(),
+    const GroceryScreen(),
+    const FinanceScreen(),
+    const MoreScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = AppColors.isDark(context);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
+      body: Stack(
+        children: [
+          IndexedStack(
+            index: _currentIndex,
+            children: _screens,
+          ),
+          if (_currentIndex != 2)
+            Positioned(
+              right: 16,
+              bottom: (_currentIndex == 1 || _currentIndex == 3 || _currentIndex == 4) ? 88 : 16,
+              child: _buildAIFab(),
+            ),
+        ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-              blurRadius: 20,
-              offset: Offset(0, -4),
-            ),
-          ],
+      bottomNavigationBar: _buildBottomBar(isDark),
+    );
+  }
+
+
+  Widget _buildAIFab() {
+    return Container(
+      width: 56,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: AppColors.aiGradient,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const AIAssistantScreen()),
+          ),
+          child: const Icon(Icons.auto_awesome, color: Colors.white, size: 24),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _navItem(0, Icons.dashboard_rounded, 'Home', isDark),
-                _navItem(1, Icons.task_alt_rounded, 'Tasks', isDark),
-                _navItem(2, Icons.shopping_cart_rounded, 'Grocery', isDark),
-                _navItem(3, Icons.account_balance_wallet_rounded, 'Finance', isDark),
-                _navItem(4, Icons.more_horiz_rounded, 'More', isDark),
-                _aiAssistButton(isDark),
-              ],
-            ),
+      ),
+    ).animate(onPlay: (controller) => controller.repeat(reverse: true))
+     .shimmer(duration: 2.seconds, color: Colors.white24, angle: 1);
+  }
+
+  Widget _buildBottomBar(bool isDark) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        border: Border(
+          top: BorderSide(
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            width: 1,
+          ),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(0, Icons.dashboard_rounded, 'Home', isDark),
+              _navItem(1, Icons.task_alt_rounded, 'Tasks', isDark),
+              _navItem(2, Icons.forum_rounded, 'Chat', isDark),
+              _navItem(3, Icons.shopping_cart_rounded, 'Grocery', isDark),
+              _navItem(4, Icons.account_balance_wallet_rounded, 'Finance', isDark),
+            ],
           ),
         ),
       ),
@@ -70,84 +114,43 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _navItem(int index, IconData icon, String label, bool isDark) {
+    // Map visual index to actual index (accounting for removed More tab from bottom bar)
     final isSelected = _currentIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppTheme.primaryDark.withOpacity(0.12)
+              ? AppColors.primary.withOpacity(0.1)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 22,
               color: isSelected
-                  ? AppTheme.primaryDark
+                  ? AppColors.primary
                   : isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.lightTextSecondary,
-            ),
-            SizedBox(height: 2),
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
+            ).animate(target: isSelected ? 1 : 0).scaleXY(begin: 1.0, end: 1.15, duration: 200.ms, curve: Curves.easeOutBack),
+            const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
-                    ? AppTheme.primaryDark
+                    ? AppColors.primary
                     : isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _aiAssistButton(bool isDark) {
-    final isSelected = _currentIndex == 5;
-    return GestureDetector(
-      onTap: () => setState(() => _currentIndex = 5),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: isSelected
-              ? AppTheme.primaryGradient
-              : LinearGradient(
-                  colors: [
-                    AppTheme.primaryDark.withOpacity(0.7),
-                    AppTheme.accentTeal.withOpacity(0.7),
-                  ],
-                ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryDark.withOpacity(0.3),
-              blurRadius: 12,
-              offset: Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.auto_awesome, color: Colors.white, size: 22),
-            Text(
-              'AI Assist',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.w600,
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
               ),
             ),
           ],

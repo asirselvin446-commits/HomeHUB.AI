@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -39,10 +41,10 @@ class _HistoryScreenState extends State<HistoryScreen>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          indicatorColor: AppTheme.primaryDark,
-          labelColor: AppTheme.primaryDark,
+          indicatorColor: AppColors.primary,
+          labelColor: AppColors.primary,
           unselectedLabelColor:
-              isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
           tabs: _tabs.map((t) => Tab(text: t)).toList(),
         ),
       ),
@@ -73,7 +75,7 @@ class _AllTab extends StatelessWidget {
     for (var t in state.householdTasks.where((t) => t.isCompleted)) {
       items.add(_HistoryEntry(
         icon: Icons.task_alt_rounded,
-        color: AppTheme.accentTeal,
+        color: AppColors.primary,
         title: t.title,
         subtitle: 'Task completed',
         date: t.dueDate ?? DateTime.now(),
@@ -85,7 +87,7 @@ class _AllTab extends StatelessWidget {
     for (var g in state.groceryItems.where((g) => g.isPurchased)) {
       items.add(_HistoryEntry(
         icon: Icons.shopping_bag_rounded,
-        color: AppTheme.accentBlue,
+        color: AppColors.info,
         title: g.name,
         subtitle: '${g.quantity} ${g.unit} purchased',
         date: DateTime.now(),
@@ -97,7 +99,7 @@ class _AllTab extends StatelessWidget {
     for (var e in state.expenses) {
       items.add(_HistoryEntry(
         icon: Icons.receipt_long_rounded,
-        color: AppTheme.accentOrange,
+        color: AppColors.error,
         title: e.title,
         subtitle: '₹${e.amount.toStringAsFixed(0)} · ${e.category}',
         date: e.date,
@@ -129,7 +131,7 @@ class _TasksTab extends StatelessWidget {
     final items = completed
         .map((t) => _HistoryEntry(
               icon: Icons.task_alt_rounded,
-              color: AppTheme.accentTeal,
+              color: AppColors.primary,
               title: t.title,
               subtitle: t.assignedTo != null ? 'By ${t.assignedTo}' : 'Completed',
               date: t.dueDate ?? DateTime.now(),
@@ -156,7 +158,7 @@ class _GroceryTab extends StatelessWidget {
     final items = purchased
         .map((g) => _HistoryEntry(
               icon: Icons.shopping_bag_rounded,
-              color: AppTheme.accentBlue,
+              color: AppColors.info,
               title: g.name,
               subtitle: '${g.quantity} ${g.unit} · ${g.category}',
               date: DateTime.now(),
@@ -184,7 +186,7 @@ class _ExpensesTab extends StatelessWidget {
     final items = expenses
         .map((e) => _HistoryEntry(
               icon: Icons.receipt_long_rounded,
-              color: AppTheme.accentOrange,
+              color: AppColors.error,
               title: e.title,
               subtitle: '₹${e.amount.toStringAsFixed(0)} · ${e.category}',
               date: e.date,
@@ -271,8 +273,8 @@ Widget _buildGroupedList(List<_HistoryEntry> items, bool isDark) {
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.5,
                 color: isDark
-                    ? AppTheme.darkTextSecondary
-                    : AppTheme.lightTextSecondary,
+                    ? AppColors.darkTextSecondary
+                    : AppColors.lightTextSecondary,
               ),
             ),
           ),
@@ -289,7 +291,7 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
     margin: const EdgeInsets.only(bottom: 8),
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+      color: isDark ? AppColors.darkCard : AppColors.lightCard,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
         color: entry.color.withOpacity(0.15),
@@ -316,7 +318,7 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
                 ),
               ),
               const SizedBox(height: 2),
@@ -325,8 +327,8 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
                 style: TextStyle(
                   fontSize: 12,
                   color: isDark
-                      ? AppTheme.darkTextSecondary
-                      : AppTheme.lightTextSecondary,
+                      ? AppColors.darkTextSecondary
+                      : AppColors.lightTextSecondary,
                 ),
               ),
             ],
@@ -337,8 +339,8 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
           style: TextStyle(
             fontSize: 11,
             color: isDark
-                ? AppTheme.darkTextSecondary
-                : AppTheme.lightTextSecondary,
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
         ),
       ],

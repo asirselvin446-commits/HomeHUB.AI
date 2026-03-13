@@ -17,10 +17,18 @@ class AppState extends ChangeNotifier {
   Map<String, dynamic>? _userProfile;
   String? _householdId;
   bool _isInitialized = false;
+  bool _isLoadingProfile = true;
   bool _isDarkMode = true;
   bool _notificationsEnabled = true;
   double _monthlyIncome = 0;
   List<AppNotification> _appNotifications = [];
+
+  // Notification category preferences
+  bool _chatNotificationsEnabled = true;
+  bool _taskNotificationsEnabled = true;
+  bool _billNotificationsEnabled = true;
+  bool _expenseNotificationsEnabled = true;
+  bool _weeklySummaryEnabled = true;
 
   // Data lists
   List<MaintenanceTask> _maintenanceTasks = [];
@@ -33,6 +41,7 @@ class AppState extends ChangeNotifier {
   List<FamilyMember> _familyMembers = [];
   List<EmergencyContact> _emergencyContacts = [];
   List<ChatMessage> _chatMessages = [];
+  List<FamilyChatMessage> _familyChatMessages = [];
 
   // Stream subscriptions
   final List<StreamSubscription> _subscriptions = [];
@@ -42,8 +51,14 @@ class AppState extends ChangeNotifier {
   bool get isLoggedIn => _firebaseUser != null;
   bool get hasHousehold => _householdId != null;
   bool get isInitialized => _isInitialized;
+  bool get isLoadingProfile => _isLoadingProfile;
   bool get isDarkMode => _isDarkMode;
   bool get notificationsEnabled => _notificationsEnabled;
+  bool get chatNotificationsEnabled => _chatNotificationsEnabled;
+  bool get taskNotificationsEnabled => _taskNotificationsEnabled;
+  bool get billNotificationsEnabled => _billNotificationsEnabled;
+  bool get expenseNotificationsEnabled => _expenseNotificationsEnabled;
+  bool get weeklySummaryEnabled => _weeklySummaryEnabled;
   List<AppNotification> get appNotifications => _appNotifications;
   int get unreadNotificationsCount => _appNotifications.where((n) => !n.isRead).length;
 
@@ -80,6 +95,7 @@ class AppState extends ChangeNotifier {
   List<FamilyMember> get familyMembers => _familyMembers;
   List<EmergencyContact> get emergencyContacts => _emergencyContacts;
   List<ChatMessage> get chatMessages => _chatMessages;
+  List<FamilyChatMessage> get familyChatMessages => _familyChatMessages;
 
   // Computed getters
   List<MaintenanceTask> get overdueMaintenanceTasks =>
@@ -123,17 +139,25 @@ class AppState extends ChangeNotifier {
     await _localStorage.init();
     _isDarkMode = _localStorage.getIsDarkMode();
     _notificationsEnabled = _localStorage.getNotificationsEnabled();
+    _chatNotificationsEnabled = _localStorage.getNotificationPref('chat');
+    _taskNotificationsEnabled = _localStorage.getNotificationPref('task');
+    _billNotificationsEnabled = _localStorage.getNotificationPref('bill');
+    _expenseNotificationsEnabled = _localStorage.getNotificationPref('expense');
+    _weeklySummaryEnabled = _localStorage.getNotificationPref('weekly_summary');
     _appNotifications = _localStorage.getNotifications();
 
     // Listen to auth state changes
     _firebase.authStateChanges.listen((user) {
       _firebaseUser = user;
       if (user != null) {
+        _isLoadingProfile = true;
+        notifyListeners();
         _loadUserProfile();
       } else {
         _clearData();
+        _isLoadingProfile = false;
+        notifyListeners();
       }
-      notifyListeners();
     });
 
     _isInitialized = true;
@@ -141,7 +165,11 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _loadUserProfile() async {
-    if (_firebaseUser == null) return;
+    if (_firebaseUser == null) {
+      _isLoadingProfile = false;
+      notifyListeners();
+      return;
+    }
 
     _userProfile = await _firebase.getUserProfile(_firebaseUser!.uid);
     if (_userProfile != null && _userProfile!['householdId'] != null) {
@@ -149,6 +177,8 @@ class AppState extends ChangeNotifier {
       await _loadHouseholdData();
       _subscribeToStreams();
     }
+    
+    _isLoadingProfile = false;
     notifyListeners();
   }
 
@@ -202,15 +232,30 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamHouseholdTasks(_householdId!).listen((data) {
-        // Detect newly added tasks
-        if (_notificationsEnabled && data.length > _householdTasks.length) {
-          final newTasks = data.where(
-            (t) => !_householdTasks.any((old) => old.id == t.id),
-          );
-          for (final t in newTasks) {
-            NotificationService.instance.showTaskAddedNotification(t.title);
-            _addNotificationToHistory('📋 New Task Added', t.title);
+        // Local alternative: detect tasks newly assigned to current user
+        if (_notificationsEnabled && _taskNotificationsEnabled && _householdTasks.isNotEmpty) {
+          for (final task in data) {
+            if (task.assignedTo == currentUserId) {
+              final oldTask = _householdTasks.where((t) => t.id == task.id).firstOrNull;
+              // Fire only if assignment is new (wasn't assigned to us before)
+              if (oldTask != null && oldTask.assignedTo != currentUserId) {
+                NotificationService.instance.showRemoteNotification(
+                  title: '📋 Task Assigned to You',
+                  body: task.title,
+                  channel: 'general',
+                );
+                _addNotificationToHistory(
+                  '📋 Task Assigned to You',
+                  task.title,
+                  type: 'task',
+                  actionRoute: 'tasks',
+                );
+              }
+            }
           }
+          NotificationService.instance.scheduleTaskOverdueReminders(
+            data, currentUserId,
+          );
         }
         _householdTasks = data;
         notifyListeners();
@@ -219,14 +264,30 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamGroceryItems(_householdId!).listen((data) {
-        // Detect newly added groceries
-        if (_notificationsEnabled && data.length > _groceryItems.length) {
+        // Local alternative: detect batch grocery additions by other members
+        if (_notificationsEnabled && _groceryItems.isNotEmpty) {
           final newItems = data.where(
             (g) => !_groceryItems.any((old) => old.id == g.id),
-          );
-          for (final g in newItems) {
-            NotificationService.instance.showGroceryAddedNotification(g.name);
-            _addNotificationToHistory('🛒 New Grocery Item', '${g.name} added to the list');
+          ).toList();
+          // Only notify if 3+ new items added by someone else
+          if (newItems.length >= 3) {
+            final addedByOthers = newItems.where(
+              (g) => g.addedBy != null && g.addedBy != currentUser,
+            ).toList();
+            if (addedByOthers.isNotEmpty) {
+              final who = addedByOthers.first.addedBy ?? 'Someone';
+              NotificationService.instance.showRemoteNotification(
+                title: '🛒 Grocery List Updated',
+                body: '$who added ${addedByOthers.length} items',
+                channel: 'general',
+              );
+              _addNotificationToHistory(
+                '🛒 Grocery List Updated',
+                '$who added ${addedByOthers.length} items to the list',
+                type: 'grocery',
+                actionRoute: 'grocery',
+              );
+            }
           }
         }
         _groceryItems = data;
@@ -236,6 +297,30 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamExpenses(_householdId!).listen((data) {
+        // Local alternative: alert for significant expenses by other members
+        if (_notificationsEnabled && _expenseNotificationsEnabled && _expenses.isNotEmpty) {
+          final newExpenses = data.where(
+            (e) => !_expenses.any((old) => old.id == e.id),
+          ).toList();
+          for (final expense in newExpenses) {
+            // Only notify for expenses ≥ ₹500 by someone else
+            if (expense.amount >= 500 &&
+                expense.paidBy != null &&
+                expense.paidBy != currentUser) {
+              NotificationService.instance.showRemoteNotification(
+                title: '💸 ₹${expense.amount.toStringAsFixed(0)} Expense Logged',
+                body: '${expense.title} (${expense.category}) by ${expense.paidBy}',
+                channel: 'general',
+              );
+              _addNotificationToHistory(
+                '💸 ₹${expense.amount.toStringAsFixed(0)} Expense Logged',
+                '${expense.title} (${expense.category}) by ${expense.paidBy}',
+                type: 'expense',
+                actionRoute: 'finance',
+              );
+            }
+          }
+        }
         _expenses = data;
         notifyListeners();
       }),
@@ -253,6 +338,30 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamSavingsGoals(_householdId!).listen((data) {
+        // Check for savings milestones before updating
+        if (_notificationsEnabled && _savingsGoals.isNotEmpty) {
+          NotificationService.instance.checkSavingsMilestones(data, _savingsGoals).then((_) {
+            // Also log milestone notifications to in-app feed
+            for (final goal in data) {
+              final prev = _savingsGoals.where((p) => p.id == goal.id).firstOrNull;
+              if (prev != null) {
+                final milestones = [0.25, 0.50, 0.75, 1.0];
+                final labels = ['25%', '50%', '75%', '100%'];
+                for (int i = 0; i < milestones.length; i++) {
+                  if (prev.progressPercent < milestones[i] && goal.progressPercent >= milestones[i]) {
+                    _addNotificationToHistory(
+                      '🎉 ${goal.name} — ${labels[i]} Complete!',
+                      '₹${goal.currentAmount.toStringAsFixed(0)} of ₹${goal.targetAmount.toStringAsFixed(0)} saved',
+                      type: 'savings',
+                      actionRoute: 'finance',
+                    );
+                    break;
+                  }
+                }
+              }
+            }
+          });
+        }
         _savingsGoals = data;
         notifyListeners();
       }),
@@ -281,6 +390,18 @@ class AppState extends ChangeNotifier {
         notifyListeners();
       }),
     );
+
+    _subscriptions.add(
+      _firebase.streamFamilyChatMessages(_householdId!).listen((data) {
+        _familyChatMessages = data;
+        notifyListeners();
+      }),
+    );
+
+    // Run AI smart scan after a short delay to let data streams populate
+    Future.delayed(const Duration(seconds: 3), () {
+      runSmartNotificationScan();
+    });
   }
 
   void _cancelSubscriptions() {
@@ -303,13 +424,19 @@ class AppState extends ChangeNotifier {
     _familyMembers = [];
     _emergencyContacts = [];
     _chatMessages = [];
+    _familyChatMessages = [];
     _appNotifications = [];
     _cancelSubscriptions();
   }
 
   // ============ NOTIFICATIONS ============
   
-  void _addNotificationToHistory(String title, String body) {
+  void _addNotificationToHistory(
+    String title,
+    String body, {
+    String type = 'system',
+    String? actionRoute,
+  }) {
     if (!_notificationsEnabled) return;
     
     final notification = AppNotification(
@@ -318,11 +445,32 @@ class AppState extends ChangeNotifier {
       body: body,
       timestamp: DateTime.now(),
       isRead: false,
+      type: type,
+      actionRoute: actionRoute,
     );
     _appNotifications.insert(0, notification);
+    // Keep only last 100 notifications to avoid unbounded growth
+    if (_appNotifications.length > 100) {
+      _appNotifications = _appNotifications.sublist(0, 100);
+    }
     _localStorage.setNotifications(_appNotifications);
     // Use Future.microtask to avoid calling notifyListeners() during build/state update if not safe
     Future.microtask(() => notifyListeners());
+  }
+
+  /// Public method to add notification from external sources (e.g., FCM handler)
+  void addNotificationFromExternal({
+    required String title,
+    required String body,
+    String type = 'chat',
+    String? actionRoute,
+  }) {
+    _addNotificationToHistory(
+      title,
+      body,
+      type: type,
+      actionRoute: actionRoute,
+    );
   }
 
   void markNotificationAsRead(String id) {
@@ -358,11 +506,113 @@ class AppState extends ChangeNotifier {
         bills: _utilityBills,
         debts: _debts,
         maintenanceTasks: _maintenanceTasks,
+        householdTasks: _householdTasks,
+        currentUserId: currentUserId,
       );
     } else {
       NotificationService.instance.cancelAllScheduled();
     }
     
+    notifyListeners();
+  }
+
+  // ============ AI SMART NOTIFICATION SCAN ============
+
+  /// Runs the AI smart notification scan.
+  /// Throttled to max once per 6 hours to avoid spamming.
+  Future<void> runSmartNotificationScan() async {
+    if (!_notificationsEnabled) return;
+    if (_householdId == null) return;
+
+    // Check throttle: only run once per 6 hours
+    final lastScan = _localStorage.getLastSmartScanDate();
+    if (lastScan != null) {
+      final hoursSince = DateTime.now().difference(lastScan).inHours;
+      if (hoursSince < 6) {
+        debugPrint('Smart scan skipped: last ran ${hoursSince}h ago');
+        return;
+      }
+    }
+
+    debugPrint('Running AI smart notification scan...');
+
+    final alerts = AIService.generateSmartAlerts(
+      householdTasks: _householdTasks,
+      groceryItems: _groceryItems,
+      expenses: _expenses,
+      debts: _debts,
+      bills: _utilityBills,
+      maintenanceTasks: _maintenanceTasks,
+      monthlyIncome: _monthlyIncome,
+    );
+
+    if (alerts.isEmpty) {
+      debugPrint('Smart scan: no alerts generated');
+      await _localStorage.setLastSmartScanDate(DateTime.now());
+      return;
+    }
+
+    debugPrint('Smart scan: ${alerts.length} alerts generated');
+
+    // Map alert type to notification route
+    String _routeForType(String type) {
+      switch (type) {
+        case 'budget':
+        case 'bill':
+        case 'spending':
+        case 'savings':
+          return 'finance';
+        case 'task':
+          return 'tasks';
+        case 'maintenance':
+          return 'maintenance';
+        case 'grocery':
+          return 'grocery';
+        default:
+          return 'home';
+      }
+    }
+
+    // Fire notifications + add to in-app history
+    for (final alert in alerts) {
+      // Push notification
+      await NotificationService.instance.showRemoteNotification(
+        title: alert.title,
+        body: alert.body,
+        channel: 'general',
+      );
+
+      // In-app notification feed
+      _addNotificationToHistory(
+        alert.title,
+        alert.body,
+        type: 'ai_smart_${alert.type}',
+        actionRoute: _routeForType(alert.type),
+      );
+    }
+
+    await _localStorage.setLastSmartScanDate(DateTime.now());
+  }
+
+  void setNotificationPref(String category, bool value) {
+    switch (category) {
+      case 'chat':
+        _chatNotificationsEnabled = value;
+        break;
+      case 'task':
+        _taskNotificationsEnabled = value;
+        break;
+      case 'bill':
+        _billNotificationsEnabled = value;
+        break;
+      case 'expense':
+        _expenseNotificationsEnabled = value;
+        break;
+      case 'weekly_summary':
+        _weeklySummaryEnabled = value;
+        break;
+    }
+    _localStorage.setNotificationPref(category, value);
     notifyListeners();
   }
 
@@ -833,6 +1083,28 @@ class AppState extends ChangeNotifier {
 
   // ============ CHAT ============
 
+  Future<void> sendFamilyChatMessage(String text) async {
+    if (_householdId == null || _firebaseUser == null) return;
+    
+    final member = _familyMembers.firstWhere(
+      (m) => m.id == _firebaseUser!.uid,
+      orElse: () => FamilyMember(
+        id: _firebaseUser!.uid,
+        name: currentUser,
+        email: _firebaseUser!.email ?? '',
+      ),
+    );
+
+    final msg = FamilyChatMessage(
+      id: '',
+      text: text,
+      senderId: member.id,
+      senderName: member.nickname ?? member.name,
+      senderAvatar: member.avatar,
+    );
+    await _firebase.saveFamilyChatMessage(_householdId!, msg);
+  }
+
   Future<void> sendChatMessage(String text) async {
     if (_householdId == null) return;
 
@@ -852,6 +1124,7 @@ class AppState extends ChangeNotifier {
         debts: _debts,
         bills: _utilityBills,
         monthlyIncome: _monthlyIncome,
+        history: _chatMessages,
       );
 
       // Execute action if present
@@ -868,8 +1141,28 @@ class AppState extends ChangeNotifier {
     }
 
     // Save AI reply
-    final aiMsg = ChatMessage(id: '', text: result.reply, isUser: false);
+    final aiMsg = ChatMessage(
+      id: '', 
+      text: result.reply, 
+      isUser: false,
+      actionType: result.action?.type,
+      actionData: result.action?.data,
+    );
     await _firebase.saveChatMessage(_householdId!, aiMsg);
+  }
+
+  Future<void> addAITextMessage(String text) async {
+    if (_householdId == null) return;
+    final aiMsg = ChatMessage(id: '', text: text, isUser: false);
+    await _firebase.saveChatMessage(_householdId!, aiMsg);
+  }
+
+  /// Clears all AI assistant chat messages from Firebase.
+  Future<void> clearChatHistory() async {
+    if (_householdId == null) return;
+    _chatMessages = [];
+    notifyListeners();
+    await _firebase.clearChatMessages(_householdId!);
   }
 
   Future<void> _executeAIAction(AIAction action) async {
@@ -952,7 +1245,150 @@ class AppState extends ChangeNotifier {
           await addGroceryItem(item);
         }
         break;
+
+      // ── NEW AGENT ACTIONS ──
+
+      case 'delete_task':
+        await deleteHouseholdTask(action.data['id']);
+        break;
+
+      case 'add_bill':
+        final bill = UtilityBill(
+          id: '',
+          type: action.data['type'] ?? 'Other',
+          amount: (action.data['amount'] ?? 0).toDouble(),
+          billDate: action.data['billDate'] != null
+              ? DateTime.parse(action.data['billDate'])
+              : DateTime.now(),
+          dueDate: action.data['dueDate'] != null
+              ? DateTime.parse(action.data['dueDate'])
+              : DateTime.now().add(const Duration(days: 15)),
+        );
+        await addUtilityBill(bill);
+        break;
+
+      case 'mark_bill_paid':
+        await toggleBillPaid(action.data['id']);
+        break;
+
+      case 'delete_bill':
+        await deleteUtilityBill(action.data['id']);
+        break;
+
+      case 'add_debt':
+        final debt = Debt(
+          id: '',
+          name: action.data['name'] ?? 'Loan',
+          totalAmount: (action.data['totalAmount'] ?? 0).toDouble(),
+          monthlyPayment: (action.data['monthlyPayment'] ?? 0).toDouble(),
+          interestRate: (action.data['interestRate'] ?? 0).toDouble(),
+        );
+        await addDebt(debt);
+        break;
+
+      case 'pay_debt':
+        await updateDebtPayment(
+          action.data['id'],
+          (action.data['amount'] ?? 0).toDouble(),
+        );
+        break;
+
+      case 'delete_debt':
+        await deleteDebt(action.data['id']);
+        break;
+
+      case 'add_savings_goal':
+        final goal = SavingsGoal(
+          id: '',
+          name: action.data['name'] ?? 'Savings',
+          targetAmount: (action.data['targetAmount'] ?? 0).toDouble(),
+          monthlyContribution: (action.data['monthlyContribution'] ?? 0).toDouble(),
+          icon: action.data['icon'] ?? '🎯',
+        );
+        await addSavingsGoal(goal);
+        break;
+
+      case 'deposit_savings':
+        final goalName = (action.data['goalName'] ?? '').toString().toLowerCase();
+        final amount = (action.data['amount'] ?? 0).toDouble();
+        final goal = _savingsGoals.firstWhere(
+          (g) => g.name.toLowerCase().contains(goalName),
+          orElse: () => SavingsGoal(id: '', name: '', targetAmount: 0),
+        );
+        if (goal.id.isNotEmpty && amount > 0) {
+          await updateSavingsAmount(goal.id, amount);
+        }
+        break;
+
+      case 'delete_savings':
+        final goalName = (action.data['goalName'] ?? '').toString().toLowerCase();
+        final goal = _savingsGoals.firstWhere(
+          (g) => g.name.toLowerCase().contains(goalName),
+          orElse: () => SavingsGoal(id: '', name: '', targetAmount: 0),
+        );
+        if (goal.id.isNotEmpty) {
+          await deleteSavingsGoal(goal.id);
+        }
+        break;
+
+      case 'complete_maintenance':
+        await completeMaintenanceTask(action.data['id']);
+        break;
+
+      case 'delete_maintenance':
+        await deleteMaintenanceTask(action.data['id']);
+        break;
+
+      case 'add_emergency_contact':
+        final contact = EmergencyContact(
+          id: '',
+          name: action.data['name'] ?? 'Contact',
+          phone: action.data['phone'] ?? '',
+          category: action.data['category'] ?? 'Emergency',
+        );
+        await addEmergencyContact(contact);
+        break;
+
+      case 'delete_emergency_contact':
+        final keyword = (action.data['name'] ?? '').toString().toLowerCase();
+        final contact = _emergencyContacts.firstWhere(
+          (c) => c.name.toLowerCase().contains(keyword),
+          orElse: () => EmergencyContact(id: '', name: '', phone: '', category: ''),
+        );
+        if (contact.id.isNotEmpty) {
+          await deleteEmergencyContact(contact.id);
+        }
+        break;
+
+      case 'clear_purchased_groceries':
+        await clearPurchasedGroceries();
+        break;
+
+      case 'delete_expense':
+        await deleteExpense(action.data['id']);
+        break;
+
+      case 'set_income':
+        setMonthlyIncome((action.data['amount'] ?? 0).toDouble());
+        break;
+
+      case 'toggle_theme':
+        toggleTheme();
+        break;
+
+      case 'navigate':
+        // Store the navigation target — UI will read this
+        _pendingNavigation = action.data['screen'];
+        notifyListeners();
+        break;
     }
+  }
+
+  // Navigation target set by AI agent
+  String? _pendingNavigation;
+  String? get pendingNavigation => _pendingNavigation;
+  void clearPendingNavigation() {
+    _pendingNavigation = null;
   }
 
   // ============ SAMPLE DATA ============

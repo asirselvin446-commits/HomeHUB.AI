@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 
 class HouseholdSetupScreen extends StatefulWidget {
   const HouseholdSetupScreen({super.key});
@@ -116,9 +118,9 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.darkBg,
+              AppColors.darkBg,
               Color(0xFF1A1A3E),
-              AppTheme.darkBg,
+              AppColors.darkBg,
             ],
           ),
         ),
@@ -148,11 +150,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            gradient: AppTheme.primaryGradient,
+            gradient: AppColors.primaryGradient,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryDark.withOpacity(0.4),
+                color: AppColors.primary.withOpacity(0.4),
                 blurRadius: 30,
                 offset: Offset(0, 10),
               ),
@@ -174,7 +176,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           'Set up your household to get started',
           style: TextStyle(
             fontSize: 15,
-            color: AppTheme.darkTextSecondary,
+            color: AppColors.darkTextSecondary,
           ),
         ),
         SizedBox(height: 48),
@@ -184,7 +186,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           icon: Icons.add_home_rounded,
           title: 'Create New Household',
           subtitle: 'Start fresh and invite your family',
-          gradient: AppTheme.primaryGradient,
+          gradient: AppColors.primaryGradient,
           onTap: () => _goToPage(1),
         ),
 
@@ -195,7 +197,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           icon: Icons.group_add_rounded,
           title: 'Join Existing Household',
           subtitle: 'Enter an invite code from a family member',
-          gradient: AppTheme.tealGradient,
+          gradient: AppColors.primaryGradient,
           onTap: () => _goToPage(2),
         ),
 
@@ -204,11 +206,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
         TextButton.icon(
           onPressed: () => state.signOut(),
           icon: Icon(Icons.logout_rounded,
-              color: AppTheme.darkTextSecondary, size: 18),
+              color: AppColors.darkTextSecondary, size: 18),
           label: Text(
             'Sign out',
             style: TextStyle(
-                color: AppTheme.darkTextSecondary, fontSize: 13),
+                color: AppColors.darkTextSecondary, fontSize: 13),
           ),
         ),
       ],
@@ -276,11 +278,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           child: Row(
             children: [
               Icon(Icons.arrow_back_ios_rounded,
-                  color: AppTheme.darkTextSecondary, size: 18),
+                  color: AppColors.darkTextSecondary, size: 18),
               SizedBox(width: 4),
               Text('Back',
                   style: TextStyle(
-                      color: AppTheme.darkTextSecondary, fontSize: 14)),
+                      color: AppColors.darkTextSecondary, fontSize: 14)),
             ],
           ),
         ),
@@ -298,7 +300,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           'Give your home a name and set your income for financial insights',
           style: TextStyle(
             fontSize: 14,
-            color: AppTheme.darkTextSecondary,
+            color: AppColors.darkTextSecondary,
           ),
         ),
         SizedBox(height: 32),
@@ -307,11 +309,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.accentOrange.withOpacity(0.15),
+              color: AppColors.error.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(_errorMessage!,
-                style: TextStyle(color: AppTheme.accentOrange, fontSize: 13)),
+                style: TextStyle(color: AppColors.error, fontSize: 13)),
           ),
           SizedBox(height: 16),
         ],
@@ -321,9 +323,9 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           style: TextStyle(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             hintText: 'Household Name (e.g. Smith Family)',
-            hintStyle: TextStyle(color: AppTheme.darkTextSecondary),
+            hintStyle: TextStyle(color: AppColors.darkTextSecondary),
             prefixIcon:
-                Icon(Icons.home_rounded, color: AppTheme.primaryDark),
+                Icon(Icons.home_rounded, color: AppColors.primary),
           ),
         ),
         SizedBox(height: 14),
@@ -333,15 +335,15 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           style: TextStyle(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             hintText: 'Monthly Income (₹) - optional',
-            hintStyle: TextStyle(color: AppTheme.darkTextSecondary),
+            hintStyle: TextStyle(color: AppColors.darkTextSecondary),
             prefixIcon: Icon(Icons.currency_rupee_rounded,
-                color: AppTheme.accentTeal),
+                color: AppColors.primary),
           ),
         ),
         SizedBox(height: 8),
         Text(
           'This helps our AI provide financial advice. You can change it later.',
-          style: TextStyle(fontSize: 12, color: AppTheme.darkTextSecondary),
+          style: TextStyle(fontSize: 12, color: AppColors.darkTextSecondary),
         ),
         SizedBox(height: 32),
         SizedBox(
@@ -350,12 +352,12 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           child: ElevatedButton(
             onPressed: _isLoading ? null : _createHousehold,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryDark,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               elevation: 8,
-              shadowColor: AppTheme.primaryDark.withOpacity(0.5),
+              shadowColor: AppColors.primary.withOpacity(0.5),
             ),
             child: _isLoading
                 ? SizedBox(
@@ -382,11 +384,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           child: Row(
             children: [
               Icon(Icons.arrow_back_ios_rounded,
-                  color: AppTheme.darkTextSecondary, size: 18),
+                  color: AppColors.darkTextSecondary, size: 18),
               SizedBox(width: 4),
               Text('Back',
                   style: TextStyle(
-                      color: AppTheme.darkTextSecondary, fontSize: 14)),
+                      color: AppColors.darkTextSecondary, fontSize: 14)),
             ],
           ),
         ),
@@ -404,7 +406,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           'Ask a family member who is an Admin to share their household invite code',
           style: TextStyle(
             fontSize: 14,
-            color: AppTheme.darkTextSecondary,
+            color: AppColors.darkTextSecondary,
           ),
         ),
         SizedBox(height: 32),
@@ -413,11 +415,11 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.accentOrange.withOpacity(0.15),
+              color: AppColors.error.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(_errorMessage!,
-                style: TextStyle(color: AppTheme.accentOrange, fontSize: 13)),
+                style: TextStyle(color: AppColors.error, fontSize: 13)),
           ),
           SizedBox(height: 16),
         ],
@@ -427,9 +429,9 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           style: TextStyle(color: Colors.white, fontSize: 16),
           decoration: InputDecoration(
             hintText: 'Enter Invite Code',
-            hintStyle: TextStyle(color: AppTheme.darkTextSecondary),
+            hintStyle: TextStyle(color: AppColors.darkTextSecondary),
             prefixIcon:
-                Icon(Icons.vpn_key_rounded, color: AppTheme.accentTeal),
+                Icon(Icons.vpn_key_rounded, color: AppColors.primary),
           ),
         ),
         SizedBox(height: 32),
@@ -439,12 +441,12 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           child: ElevatedButton(
             onPressed: _isLoading ? null : _joinHousehold,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentTeal,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               elevation: 8,
-              shadowColor: AppTheme.accentTeal.withOpacity(0.5),
+              shadowColor: AppColors.primary.withOpacity(0.5),
             ),
             child: _isLoading
                 ? SizedBox(

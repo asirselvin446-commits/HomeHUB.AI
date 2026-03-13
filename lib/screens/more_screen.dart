@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import 'family_screen.dart';
 import 'emergency_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'history_screen.dart';
 import 'feedback_screen.dart';
+
+import 'notification_preferences_screen.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
@@ -26,11 +30,11 @@ class MoreScreen extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryDark.withOpacity(0.3),
+                  color: AppColors.primary.withOpacity(0.3),
                   blurRadius: 20,
                   offset: Offset(0, 8),
                 ),
@@ -78,10 +82,10 @@ class MoreScreen extends StatelessWidget {
               padding: EdgeInsets.all(16),
               margin: EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: AppTheme.accentTeal.withOpacity(0.3)),
+                    color: AppColors.primary.withOpacity(0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,14 +93,14 @@ class MoreScreen extends StatelessWidget {
                   Row(
                     children: [
                       Icon(Icons.vpn_key_rounded,
-                          color: AppTheme.accentTeal, size: 18),
+                          color: AppColors.primary, size: 18),
                       SizedBox(width: 8),
                       Text(
                         'Household Invite Code',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.accentTeal,
+                          color: AppColors.primary,
                         ),
                       ),
                     ],
@@ -107,8 +111,8 @@ class MoreScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.lightTextSecondary,
+                          ? AppColors.darkTextSecondary
+                          : AppColors.lightTextSecondary,
                     ),
                   ),
                   SizedBox(height: 8),
@@ -119,7 +123,7 @@ class MoreScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Invite code copied! 📋'),
-                          backgroundColor: AppTheme.accentTeal,
+                          backgroundColor: AppColors.primary,
                         ),
                       );
                     },
@@ -128,7 +132,7 @@ class MoreScreen extends StatelessWidget {
                           horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? AppTheme.darkCardAlt
+                            ? AppColors.darkCardAlt
                             : Color(0xFFF0F2F5),
                         borderRadius: BorderRadius.circular(10),
                       ),
@@ -142,14 +146,14 @@ class MoreScreen extends StatelessWidget {
                                 fontFamily: 'monospace',
                                 fontWeight: FontWeight.w600,
                                 color: isDark
-                                    ? AppTheme.darkText
-                                    : AppTheme.lightText,
+                                    ? AppColors.darkText
+                                    : AppColors.lightText,
                               ),
                             ),
                           ),
                           Icon(Icons.copy_rounded,
                               size: 18,
-                              color: AppTheme.accentTeal),
+                              color: AppColors.primary),
                         ],
                       ),
                     ),
@@ -166,7 +170,7 @@ class MoreScreen extends StatelessWidget {
               icon: Icons.auto_awesome,
               title: 'AI Assistant',
               subtitle: 'Ask questions about your home',
-              color: AppTheme.primaryDark,
+              color: AppColors.primary,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => AIAssistantScreen())),
             ),
@@ -174,7 +178,7 @@ class MoreScreen extends StatelessWidget {
               icon: Icons.family_restroom_rounded,
               title: 'Family Members',
               subtitle: '${state.familyMembers.length} members',
-              color: AppTheme.accentBlue,
+              color: AppColors.info,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => FamilyScreen())),
             ),
@@ -182,7 +186,7 @@ class MoreScreen extends StatelessWidget {
               icon: Icons.emergency_rounded,
               title: 'Emergency Contacts',
               subtitle: '${state.emergencyContacts.length} contacts',
-              color: AppTheme.accentOrange,
+              color: AppColors.error,
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => EmergencyScreen())),
             ),
@@ -205,25 +209,21 @@ class MoreScreen extends StatelessWidget {
                   : Icons.dark_mode_rounded,
               title: 'Theme',
               subtitle: isDark ? 'Dark Mode' : 'Light Mode',
-              color: AppTheme.accentYellow,
+              color: AppColors.accent,
               onTap: () => state.toggleTheme(),
               trailing: Switch(
                 value: isDark,
                 onChanged: (_) => state.toggleTheme(),
-                activeColor: AppTheme.primaryDark,
+                activeColor: AppColors.primary,
               ),
             ),
             _MenuItem(
               icon: Icons.notifications_active_rounded,
-              title: 'Notifications',
+              title: 'Notification Preferences',
               subtitle: state.notificationsEnabled ? 'Enabled' : 'Disabled',
-              color: AppTheme.accentBlue,
-              onTap: () => state.toggleNotificationsEnabled(!state.notificationsEnabled),
-              trailing: Switch(
-                value: state.notificationsEnabled,
-                onChanged: (val) => state.toggleNotificationsEnabled(val),
-                activeColor: AppTheme.primaryDark,
-              ),
+              color: AppColors.info,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const NotificationPreferencesScreen())),
             ),
             _MenuItem(
               icon: Icons.currency_rupee_rounded,
@@ -231,7 +231,7 @@ class MoreScreen extends StatelessWidget {
               subtitle: state.monthlyIncome > 0
                   ? '₹${state.monthlyIncome.toStringAsFixed(0)}'
                   : 'Not set',
-              color: AppTheme.accentTeal,
+              color: AppColors.primary,
               onTap: () => _showIncomeDialog(context, state),
             ),
           ], isDark),
@@ -243,7 +243,7 @@ class MoreScreen extends StatelessWidget {
               icon: Icons.info_outline_rounded,
               title: 'About HomeHub AI',
               subtitle: 'Version 1.0.0',
-              color: AppTheme.darkTextSecondary,
+              color: AppColors.darkTextSecondary,
               onTap: () {
                 showAboutDialog(
                   context: context,
@@ -252,10 +252,10 @@ class MoreScreen extends StatelessWidget {
                   applicationIcon: Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryDark.withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.home_rounded, size: 40, color: AppTheme.primaryDark),
+                    child: Icon(Icons.home_rounded, size: 40, color: AppColors.primary),
                   ),
                   applicationLegalese: '© 2026 HomeHub AI',
                   children: [
@@ -280,7 +280,7 @@ class MoreScreen extends StatelessWidget {
               icon: Icons.logout_rounded,
               title: 'Sign Out',
               subtitle: 'Log out of your account',
-              color: AppTheme.accentOrange,
+              color: AppColors.error,
               onTap: () => _confirmSignOut(context, state),
             ),
           ], isDark),
@@ -295,7 +295,7 @@ class MoreScreen extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
+                    gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(Icons.home_rounded,
@@ -308,8 +308,8 @@ class MoreScreen extends StatelessWidget {
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: isDark
-                        ? AppTheme.darkTextSecondary
-                        : AppTheme.lightTextSecondary,
+                        ? AppColors.darkTextSecondary
+                        : AppColors.lightTextSecondary,
                   ),
                 ),
                 Text(
@@ -317,8 +317,8 @@ class MoreScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
-                        ? AppTheme.darkTextSecondary.withOpacity(0.5)
-                        : AppTheme.lightTextSecondary.withOpacity(0.5),
+                        ? AppColors.darkTextSecondary.withOpacity(0.5)
+                        : AppColors.lightTextSecondary.withOpacity(0.5),
                   ),
                 ),
               ],
@@ -340,14 +340,14 @@ class MoreScreen extends StatelessWidget {
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: isDark
-                ? AppTheme.darkTextSecondary
-                : AppTheme.lightTextSecondary,
+                ? AppColors.darkTextSecondary
+                : AppColors.lightTextSecondary,
           ),
         ),
         SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+            color: isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -375,8 +375,8 @@ class MoreScreen extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: isDark
-                            ? AppTheme.darkText
-                            : AppTheme.lightText,
+                            ? AppColors.darkText
+                            : AppColors.lightText,
                       ),
                     ),
                     subtitle: Text(
@@ -384,15 +384,15 @@ class MoreScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                       ),
                     ),
                     trailing: item.trailing ??
                         Icon(Icons.chevron_right_rounded,
                             color: isDark
-                                ? AppTheme.darkTextSecondary
-                                : AppTheme.lightTextSecondary),
+                                ? AppColors.darkTextSecondary
+                                : AppColors.lightTextSecondary),
                   ),
                   if (!isLast)
                     Divider(
@@ -440,7 +440,7 @@ class MoreScreen extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryDark,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             child: Text('Save'),
@@ -466,7 +466,7 @@ class MoreScreen extends StatelessWidget {
               state.signOut();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.accentOrange,
+              backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
             child: Text('Sign Out'),

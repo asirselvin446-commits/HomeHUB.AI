@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -68,9 +70,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.darkBg,
+              AppColors.darkBg,
               Color(0xFF131332),
-              AppTheme.darkBg,
+              AppColors.darkBg,
             ],
           ),
         ),
@@ -93,7 +95,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   'How should your family see you?',
                   style: TextStyle(
                     fontSize: 16,
-                    color: AppTheme.darkTextSecondary,
+                    color: AppColors.darkTextSecondary,
                   ),
                 ),
                 SizedBox(height: 48),
@@ -102,11 +104,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.accentOrange.withOpacity(0.15),
+                      color: AppColors.error.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(_errorMessage!,
-                        style: TextStyle(color: AppTheme.accentOrange, fontSize: 13)),
+                        style: TextStyle(color: AppColors.error, fontSize: 13)),
                   ),
                   SizedBox(height: 16),
                 ],
@@ -117,9 +119,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryDark.withOpacity(0.1),
+                      color: AppColors.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppTheme.primaryDark, width: 2),
+                      border: Border.all(color: AppColors.primary, width: 2),
                     ),
                     child: Center(
                       child: Text(
@@ -141,8 +143,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'e.g. Papa, Junior, etc.',
-                    hintStyle: TextStyle(color: AppTheme.darkTextSecondary.withOpacity(0.5)),
-                    prefixIcon: Icon(Icons.face_rounded, color: AppTheme.primaryDark),
+                    hintStyle: TextStyle(color: AppColors.darkTextSecondary.withOpacity(0.5)),
+                    prefixIcon: Icon(Icons.face_rounded, color: AppColors.primary),
                   ),
                 ),
                 SizedBox(height: 32),
@@ -167,7 +169,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       child: Container(
                         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppTheme.primaryDark : AppTheme.darkCard,
+                          color: isSelected ? AppColors.primary : AppColors.darkCard,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected ? Colors.white24 : Colors.transparent,
@@ -181,7 +183,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             Text(
                               r['role']!,
                               style: TextStyle(
-                                color: isSelected ? Colors.white : AppTheme.darkTextSecondary,
+                                color: isSelected ? Colors.white : AppColors.darkTextSecondary,
                                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                               ),
                             ),
@@ -199,11 +201,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryDark,
+                      backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 8,
-                      shadowColor: AppTheme.primaryDark.withOpacity(0.4),
+                      shadowColor: AppColors.primary.withOpacity(0.4),
                     ),
                     child: _isLoading
                         ? CircularProgressIndicator(color: Colors.white)
@@ -220,7 +222,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     onPressed: () => context.read<AppState>().signOut(),
                     child: Text(
                       'Sign out',
-                      style: TextStyle(color: AppTheme.darkTextSecondary),
+                      style: TextStyle(color: AppColors.darkTextSecondary),
                     ),
                   ),
                 ),

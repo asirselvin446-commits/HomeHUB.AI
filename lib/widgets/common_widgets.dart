@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 
 class GradientCard extends StatelessWidget {
   final LinearGradient gradient;
   final Widget child;
+  final EdgeInsetsGeometry? padding;
 
   const GradientCard({
     Key? key,
     required this.gradient,
     required this.child,
+    this.padding,
   }) : super(key: key);
 
   @override
@@ -16,42 +19,17 @@ class GradientCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withOpacity(0.3),
-            blurRadius: 10,
+            color: gradient.colors.first.withOpacity(0.2),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(20),
+      padding: padding ?? const EdgeInsets.all(AppSpacing.md + 4),
       child: child,
-    );
-  }
-}
-
-class SectionHeader extends StatelessWidget {
-  final String title;
-
-  const SectionHeader({
-    Key? key,
-    required this.title,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          color: isDark ? AppTheme.darkText : AppTheme.lightText,
-        ),
-      ),
     );
   }
 }
@@ -76,13 +54,16 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     Widget card = Container(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.paddingCard,
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.2)),
+        color: AppColors.card(context),
+        borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
+        border: Border.all(
+          color: AppColors.isDark(context)
+              ? AppColors.darkBorder
+              : Colors.black.withOpacity(0.04),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -93,10 +74,10 @@ class StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: 18),
               ),
               const Spacer(),
               Text(
@@ -104,7 +85,7 @@ class StatCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                  color: AppColors.text(context),
                 ),
               ),
             ],
@@ -114,18 +95,18 @@ class StatCard extends StatelessWidget {
             title,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary(context),
             ),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               subtitle!,
               style: TextStyle(
                 fontSize: 11,
                 color: color,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ],
@@ -134,10 +115,7 @@ class StatCard extends StatelessWidget {
     );
 
     if (onTap != null) {
-      return GestureDetector(
-        onTap: onTap,
-        child: card,
-      );
+      return GestureDetector(onTap: onTap, child: card);
     }
     return card;
   }
@@ -157,41 +135,46 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                color: AppColors.card(context),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.isDark(context)
+                      ? AppColors.darkBorder
+                      : AppColors.lightBorder,
+                ),
               ),
               child: Icon(
                 icon,
-                size: 48,
-                color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                size: 40,
+                color: AppColors.textSecondary(context),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                color: AppColors.text(context),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                color: AppColors.textSecondary(context),
+                height: 1.4,
               ),
             ),
           ],

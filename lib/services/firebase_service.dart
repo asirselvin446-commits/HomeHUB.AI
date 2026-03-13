@@ -1,12 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/models.dart';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   // ============ AUTH ============
 
@@ -65,6 +67,20 @@ class FirebaseService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
+  // ============ PUSH NOTIFICATIONS (FCM) ============
+
+  Future<void> requestNotificationPermissions() async {
+    await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
+
+  Future<String?> getFCMToken() async {
+    return await _fcm.getToken();
+  }
+
   // ============ USER PROFILE ============
 
   // Create or update user profile in Firestore
@@ -78,6 +94,13 @@ class FirebaseService {
     String avatar = '👤',
     bool? isAdmin,
   }) async {
+    String? fcmToken;
+    try {
+      fcmToken = await getFCMToken();
+    } catch (e) {
+      // Ignore if FCM is largely unavailable (e.g. some emulators)
+    }
+
     final data = <String, dynamic>{
       'name': name,
       'nickname': nickname,
@@ -89,6 +112,9 @@ class FirebaseService {
     };
     if (isAdmin != null) {
       data['isAdmin'] = isAdmin;
+    }
+    if (fcmToken != null) {
+      data['fcmToken'] = fcmToken;
     }
     await _db.collection('users').doc(uid).set(data, SetOptions(merge: true));
   }
@@ -503,10 +529,49 @@ class FirebaseService {
   Stream<List<ChatMessage>> streamChatMessages(String householdId) {
     return _db
         .collection(_collectionPath(householdId, 'chatMessages'))
+        .orderBy('timestamp', descending: true)
+        .limit(100)
+        .snapshots()
+        .map((snapshot) {
+            final msgs = snapshot.docs
+                .map((doc) => ChatMessage.fromJson({
+                      'id': doc.id,
+                      ...doc.data(),
+                    }))
+                .toList();
+            // Reverse so oldest is first (chronological order)
+            return msgs.reversed.toList();
+        });
+  }
+
+  /// Deletes all AI chat messages for the given household.
+  Future<void> clearChatMessages(String householdId) async {
+    final path = _collectionPath(householdId, 'chatMessages');
+    final snapshot = await _db.collection(path).get();
+    final batch = _db.batch();
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+    await batch.commit();
+  }
+
+  // Family Chat Messages
+  Future<void> saveFamilyChatMessage(
+      String householdId, FamilyChatMessage msg) async {
+    await addDocument(
+      householdId: householdId,
+      collection: 'familyChatMessages',
+      data: msg.toJson(),
+    );
+  }
+
+  Stream<List<FamilyChatMessage>> streamFamilyChatMessages(String householdId) {
+    return _db
+        .collection(_collectionPath(householdId, 'familyChatMessages'))
         .orderBy('timestamp')
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => ChatMessage.fromJson({
+            .map((doc) => FamilyChatMessage.fromJson({
                   'id': doc.id,
                   ...doc.data(),
                 }))

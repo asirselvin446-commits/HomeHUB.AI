@@ -4,6 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
 import '../theme/app_theme.dart';
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class EmergencyScreen extends StatelessWidget {
@@ -51,19 +53,19 @@ class EmergencyScreen extends StatelessWidget {
             margin: EdgeInsets.only(right: 16),
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.accentOrange.withOpacity(0.15),
+              color: AppColors.error.withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.emergency_rounded,
-                    color: AppTheme.accentOrange, size: 16),
+                    color: AppColors.error, size: 16),
                 SizedBox(width: 4),
                 Text(
                   'SOS',
                   style: TextStyle(
-                    color: AppTheme.accentOrange,
+                    color: AppColors.error,
                     fontWeight: FontWeight.w800,
                     fontSize: 12,
                   ),
@@ -99,7 +101,7 @@ class EmergencyScreen extends StatelessWidget {
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppTheme.accentOrange.withOpacity(0.3)),
+                        color: AppColors.error.withOpacity(0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -107,14 +109,14 @@ class EmergencyScreen extends StatelessWidget {
                       Row(
                         children: [
                           Icon(Icons.speed_rounded,
-                              color: AppTheme.accentOrange, size: 20),
+                              color: AppColors.error, size: 20),
                           SizedBox(width: 8),
                           Text(
                             'Quick Access',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: AppTheme.accentOrange,
+                              color: AppColors.error,
                             ),
                           ),
                         ],
@@ -133,7 +135,7 @@ class EmergencyScreen extends StatelessWidget {
                               padding: EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? AppTheme.darkCard
+                                    ? AppColors.darkCard
                                     : Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -159,8 +161,8 @@ class EmergencyScreen extends StatelessWidget {
                                       fontSize: 11,
                                       fontWeight: FontWeight.w600,
                                       color: isDark
-                                          ? AppTheme.darkText
-                                          : AppTheme.lightText,
+                                          ? AppColors.darkText
+                                          : AppColors.lightText,
                                     ),
                                     textAlign: TextAlign.center,
                                     maxLines: 2,
@@ -195,8 +197,8 @@ class EmergencyScreen extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: isDark
-                                  ? AppTheme.darkText
-                                  : AppTheme.lightText,
+                                  ? AppColors.darkText
+                                  : AppColors.lightText,
                             ),
                           ),
                         ],
@@ -207,8 +209,8 @@ class EmergencyScreen extends StatelessWidget {
                             padding: EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? AppTheme.darkCard
-                                  : AppTheme.lightCard,
+                                  ? AppColors.darkCard
+                                  : AppColors.lightCard,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -234,15 +236,15 @@ class EmergencyScreen extends StatelessWidget {
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600,
                                           color: isDark
-                                              ? AppTheme.darkText
-                                              : AppTheme.lightText,
+                                              ? AppColors.darkText
+                                              : AppColors.lightText,
                                         ),
                                       ),
                                       Text(
                                         contact.phone,
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: AppTheme.primaryDark,
+                                          color: AppColors.primary,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -262,7 +264,7 @@ class EmergencyScreen extends StatelessWidget {
                                             ScaffoldMessenger.of(context).showSnackBar(
                                               SnackBar(
                                                 content: Text('Could not open dialer for ${contact.phone}'),
-                                                backgroundColor: AppTheme.accentOrange,
+                                                backgroundColor: AppColors.error,
                                               ),
                                             );
                                           }
@@ -271,13 +273,13 @@ class EmergencyScreen extends StatelessWidget {
                                       child: Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.accentTeal
+                                          color: AppColors.primary
                                               .withOpacity(0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
                                         child: Icon(Icons.phone_rounded,
-                                            color: AppTheme.accentTeal,
+                                            color: AppColors.primary,
                                             size: 18),
                                       ),
                                     ),
@@ -287,13 +289,13 @@ class EmergencyScreen extends StatelessWidget {
                                       child: Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: (isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary)
+                                          color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
                                               .withOpacity(0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
                                         child: Icon(Icons.edit_rounded,
-                                            color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                                             size: 18),
                                       ),
                                     ),
@@ -305,14 +307,14 @@ class EmergencyScreen extends StatelessWidget {
                                       child: Container(
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: AppTheme.accentOrange
+                                          color: AppColors.error
                                               .withOpacity(0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
                                         child: Icon(
                                             Icons.delete_outline_rounded,
-                                            color: AppTheme.accentOrange,
+                                            color: AppColors.error,
                                             size: 18),
                                       ),
                                     ),
@@ -337,7 +339,7 @@ class EmergencyScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor:
-          isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+          isDark ? AppColors.darkSurface : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -373,20 +375,20 @@ class EmergencyScreen extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : Color(0xFFF5F7FA),
+                color: isDark ? AppColors.darkCard : Color(0xFFF5F7FA),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.phone_rounded, color: AppTheme.primaryDark),
+                  Icon(Icons.phone_rounded, color: AppColors.primary),
                   SizedBox(width: 8),
                   Text(
                     contact.phone,
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.primaryDark,
+                      color: AppColors.primary,
                     ),
                   ),
                 ],
@@ -407,7 +409,7 @@ class EmergencyScreen extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Could not launch dialer for ${contact.phone}'),
-                          backgroundColor: AppTheme.accentOrange,
+                          backgroundColor: AppColors.error,
                         ),
                       );
                     }
@@ -417,7 +419,7 @@ class EmergencyScreen extends StatelessWidget {
                 label: Text('Call Now',
                     style: TextStyle(fontWeight: FontWeight.w600)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.accentTeal,
+                  backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -440,8 +442,8 @@ class EmergencyScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppTheme.darkSurface
-          : AppTheme.lightSurface,
+          ? AppColors.darkSurface
+          : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -520,7 +522,7 @@ class EmergencyScreen extends StatelessWidget {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

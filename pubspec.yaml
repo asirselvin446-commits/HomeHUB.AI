@@ -30,6 +30,7 @@ dependencies:
   # Notifications
   flutter_local_notifications: ^18.0.1
   timezone: ^0.10.0
+  firebase_messaging: ^14.9.4
 
 dev_dependencies:
   flutter_test:

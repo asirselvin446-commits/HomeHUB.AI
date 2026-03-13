@@ -424,17 +424,58 @@ class EmergencyContact {
       );
 }
 
+class FamilyChatMessage {
+  String id;
+  String text;
+  String senderId;
+  String senderName;
+  String senderAvatar;
+  DateTime timestamp;
+
+  FamilyChatMessage({
+    required this.id,
+    required this.text,
+    required this.senderId,
+    required this.senderName,
+    required this.senderAvatar,
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime.now();
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        'senderId': senderId,
+        'senderName': senderName,
+        'senderAvatar': senderAvatar,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
+  factory FamilyChatMessage.fromJson(Map<String, dynamic> json) =>
+      FamilyChatMessage(
+        id: json['id'],
+        text: json['text'],
+        senderId: json['senderId'] ?? '',
+        senderName: json['senderName'] ?? 'Unknown',
+        senderAvatar: json['senderAvatar'] ?? '👤',
+        timestamp: DateTime.parse(json['timestamp']),
+      );
+}
+
 class ChatMessage {
   String id;
   String text;
   bool isUser;
   DateTime timestamp;
+  String? actionType;
+  Map<String, dynamic>? actionData;
 
   ChatMessage({
     required this.id,
     required this.text,
     required this.isUser,
     DateTime? timestamp,
+    this.actionType,
+    this.actionData,
   }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
@@ -442,6 +483,8 @@ class ChatMessage {
         'text': text,
         'isUser': isUser,
         'timestamp': timestamp.toIso8601String(),
+        if (actionType != null) 'actionType': actionType,
+        if (actionData != null) 'actionData': actionData,
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -449,6 +492,8 @@ class ChatMessage {
         text: json['text'],
         isUser: json['isUser'],
         timestamp: DateTime.parse(json['timestamp']),
+        actionType: json['actionType'],
+        actionData: json['actionData'] != null ? Map<String, dynamic>.from(json['actionData']) : null,
       );
 }
 
@@ -478,6 +523,8 @@ class AppNotification {
   String body;
   DateTime timestamp;
   bool isRead;
+  String type; // chat, task, bill, expense, maintenance, savings, grocery, system
+  String? actionRoute; // deep-link route, e.g. 'tasks', 'finance', 'grocery'
 
   AppNotification({
     required this.id,
@@ -485,6 +532,8 @@ class AppNotification {
     required this.body,
     DateTime? timestamp,
     this.isRead = false,
+    this.type = 'system',
+    this.actionRoute,
   }) : timestamp = timestamp ?? DateTime.now();
 
   Map<String, dynamic> toJson() => {
@@ -493,6 +542,8 @@ class AppNotification {
         'body': body,
         'timestamp': timestamp.toIso8601String(),
         'isRead': isRead,
+        'type': type,
+        'actionRoute': actionRoute,
       };
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
@@ -502,5 +553,7 @@ class AppNotification {
         body: json['body'],
         timestamp: DateTime.parse(json['timestamp']),
         isRead: json['isRead'] ?? false,
+        type: json['type'] ?? 'system',
+        actionRoute: json['actionRoute'],
       );
 }

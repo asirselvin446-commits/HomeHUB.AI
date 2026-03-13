@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
+import '../services/ai_service.dart';
+import '../models/models.dart';
+
+import '../theme/colors.dart';
+import '../theme/spacing.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:animated_text_kit/animated_text_kit.dart';
 
 class AIAssistantScreen extends StatefulWidget {
   const AIAssistantScreen({super.key});
@@ -29,10 +35,61 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndSendBriefing();
+    });
+  }
+
+  void _checkAndSendBriefing() {
+    final state = context.read<AppState>();
+    if (state.chatMessages.isEmpty && !_isTyping) {
+      // Small delay for natural feel
+      setState(() => _isTyping = true);
+      Future.delayed(const Duration(milliseconds: 1200), () {
+        if (!mounted) return;
+        final briefing = AIService.generateProactiveBriefing(
+          householdTasks: state.householdTasks,
+          expenses: state.expenses,
+        );
+        state.addAITextMessage(briefing);
+        setState(() => _isTyping = false);
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _confirmClearChat() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear Chat History'),
+        content: const Text(
+          'This will delete all AI assistant messages. Your tasks, groceries, and expenses will not be affected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.read<AppState>().clearChatHistory();
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Clear All'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _sendMessage() async {
@@ -54,7 +111,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     Future.delayed(const Duration(milliseconds: 120), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 350),
           curve: Curves.easeOut,
         );
@@ -75,13 +132,13 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 18),
             ),
             const SizedBox(width: 10),
-            Column(
+            Flexible(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
@@ -89,7 +146,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                    color: isDark ? AppColors.darkText : AppColors.lightText,
                   ),
                 ),
                 Text(
@@ -97,26 +154,33 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   style: TextStyle(
                     fontSize: 11,
                     color: _isTyping
-                        ? AppTheme.primaryDark
+                        ? AppColors.primary
                         : isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.lightTextSecondary,
+                            ? AppColors.darkTextSecondary
+                            : AppColors.lightTextSecondary,
                   ),
                 ),
               ],
-            ),
+            )),
           ],
         ),
         actions: [
           if (messages.isNotEmpty)
             IconButton(
               icon: Icon(Icons.help_outline_rounded,
-                  color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary),
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
               tooltip: 'What can the assistant do?',
               onPressed: () {
                 _textController.text = 'help';
                 _sendMessage();
               },
+            ),
+          if (messages.isNotEmpty)
+            IconButton(
+              icon: Icon(Icons.delete_outline_rounded,
+                  color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+              tooltip: 'Clear chat history',
+              onPressed: _confirmClearChat,
             ),
         ],
       ),
@@ -128,14 +192,17 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                 ? _buildWelcomeView(isDark)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    reverse: true,
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                     itemCount: messages.length + (_isTyping ? 1 : 0),
                     itemBuilder: (ctx, idx) {
-                      if (idx == messages.length && _isTyping) {
+                      if (_isTyping && idx == 0) {
                         return _buildTypingIndicator(isDark);
                       }
-                      final msg = messages[idx];
-                      return _buildMessageBubble(msg.text, msg.isUser, isDark);
+                      final msgIndex = messages.length - 1 - (idx - (_isTyping ? 1 : 0));
+                      final msg = messages[msgIndex];
+                      final isLastAi = !msg.isUser && msgIndex == messages.length - 1;
+                      return _buildMessageBubble(msg, isDark, isLastAi);
                     },
                   ),
           ),
@@ -162,11 +229,11 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
+              gradient: AppColors.primaryGradient,
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryDark.withOpacity(0.3),
+                  color: AppColors.primary.withOpacity(0.3),
                   blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
@@ -181,7 +248,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
             ),
           ),
           const SizedBox(height: 8),
@@ -190,7 +257,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               height: 1.55,
             ),
           ),
@@ -207,7 +274,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             'Tap a suggestion below or type anything!',
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
             ),
           ),
         ],
@@ -219,19 +286,19 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.primaryDark.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: AppTheme.primaryDark),
+          Icon(icon, size: 20, color: AppColors.primary),
           const SizedBox(width: 12),
           Text(
             label,
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? AppTheme.darkText : AppTheme.lightText,
+              color: isDark ? AppColors.darkText : AppColors.lightText,
             ),
           ),
         ],
@@ -258,20 +325,20 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+                color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: AppTheme.primaryDark.withOpacity(0.25)),
+                border: Border.all(color: AppColors.primary.withOpacity(0.25)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(chip['icon'] as IconData, size: 14, color: AppTheme.primaryDark),
+                  Icon(chip['icon'] as IconData, size: 14, color: AppColors.primary),
                   const SizedBox(width: 6),
                   Text(
                     chip['label'] as String,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                      color: isDark ? AppColors.darkText : AppColors.lightText,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -288,7 +355,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     return Container(
       padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkSurface : AppTheme.lightSurface,
+        color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -303,7 +370,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCard : const Color(0xFFF0F2F5),
+                color: isDark ? AppColors.darkCard : const Color(0xFFF0F2F5),
                 borderRadius: BorderRadius.circular(26),
               ),
               child: TextField(
@@ -318,12 +385,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                   border: InputBorder.none,
                   hintStyle: TextStyle(
                     fontSize: 13,
-                    color: isDark ? AppTheme.darkTextSecondary : AppTheme.lightTextSecondary,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                   ),
                 ),
                 style: TextStyle(
                   fontSize: 14,
-                  color: isDark ? AppTheme.darkText : AppTheme.lightText,
+                  color: isDark ? AppColors.darkText : AppColors.lightText,
                 ),
                 onSubmitted: (_) => _sendMessage(),
               ),
@@ -337,14 +404,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                gradient: _isTyping ? null : AppTheme.primaryGradient,
-                color: _isTyping ? (isDark ? AppTheme.darkCard : Colors.grey.shade200) : null,
+                gradient: _isTyping ? null : AppColors.primaryGradient,
+                color: _isTyping ? (isDark ? AppColors.darkCard : Colors.grey.shade200) : null,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: _isTyping
                     ? []
                     : [
                         BoxShadow(
-                          color: AppTheme.primaryDark.withOpacity(0.4),
+                          color: AppColors.primary.withOpacity(0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -370,7 +437,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
+          color: isDark ? AppColors.darkCard : AppColors.lightCard,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
@@ -384,7 +451,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.auto_awesome, size: 14, color: AppTheme.primaryDark),
+            Icon(Icons.auto_awesome, size: 14, color: AppColors.primary),
             const SizedBox(width: 6),
             _TypingDots(),
           ],
@@ -393,7 +460,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     );
   }
 
-  Widget _buildMessageBubble(String text, bool isUser, bool isDark) {
+  Widget _buildMessageBubble(ChatMessage msg, bool isDark, bool isLastAi) {
+    final isUser = msg.isUser;
+    final text = msg.text;
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -402,10 +472,10 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isUser
-              ? AppTheme.primaryDark
+              ? AppColors.primary
               : isDark
-                  ? AppTheme.darkCard
-                  : AppTheme.lightCard,
+                  ? AppColors.darkCard
+                  : AppColors.lightCard,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -425,24 +495,108 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.auto_awesome, size: 13, color: AppTheme.primaryDark),
+                    Icon(Icons.auto_awesome, size: 13, color: AppColors.primary),
                     const SizedBox(width: 4),
                     Text(
                       'HomeHub AI',
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.primaryDark,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
                 ),
               ),
-            _buildRichText(text, isUser, isDark),
+            if (isLastAi)
+              _buildAnimatedRichText(text, isUser, isDark)
+            else
+              _buildRichText(text, isUser, isDark),
+            
+            if (!isUser && msg.actionType != null)
+              _buildActionWidget(msg, isDark),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildAnimatedRichText(String text, bool isUser, bool isDark) {
+    final baseColor = isUser ? Colors.white : (isDark ? AppColors.darkText : AppColors.lightText);
+    final cleanText = text.replaceAll('**', '');
+    
+    return DefaultTextStyle(
+      style: TextStyle(fontSize: 14, height: 1.55, color: baseColor),
+      child: AnimatedTextKit(
+        animatedTexts: [
+          TypewriterAnimatedText(
+            cleanText,
+            speed: const Duration(milliseconds: 15),
+          ),
+        ],
+        isRepeatingAnimation: false,
+        displayFullTextOnTap: true,
+      ),
+    );
+  }
+
+  Widget _buildActionWidget(ChatMessage msg, bool isDark) {
+    if (msg.actionType == null || msg.actionData == null) return const SizedBox.shrink();
+    
+    final type = msg.actionType!;
+    final data = msg.actionData!;
+    
+    IconData icon = Icons.check_circle_outline;
+    String title = 'Action completed';
+    String subtitle = '';
+    Color color = AppColors.primary;
+    
+    if (type == 'add_task') {
+      icon = Icons.task_alt_rounded;
+      title = data['title'] ?? 'Task Added';
+      subtitle = 'Priority: ${data['priority'] ?? 'Medium'}';
+    } else if (type == 'add_expense') {
+      icon = Icons.receipt_long_rounded;
+      title = data['title'] ?? 'Expense Recorded';
+      subtitle = 'Amount: ₹${data['amount']}';
+      color = AppColors.error;
+    } else if (type == 'add_grocery' || type == 'add_grocery_multi') {
+      icon = Icons.shopping_cart_outlined;
+      title = type == 'add_grocery' ? (data['name'] ?? 'Grocery Added') : 'Groceries Added';
+      subtitle = type == 'add_grocery' ? '${data['quantity']} ${data['unit']}' : '';
+      color = const Color(0xFF10b981); // Emerald green
+    } else if (type == 'add_maintenance') {
+      icon = Icons.home_repair_service_rounded;
+      title = data['title'] ?? 'Maintenance Scheduled';
+      subtitle = 'Category: ${data['category']}';
+      color = Colors.orange;
+    }
+    
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87, fontSize: 13)),
+                if (subtitle.isNotEmpty)
+                  Text(subtitle, style: TextStyle(fontSize: 11, color: isDark ? Colors.white70 : Colors.black54)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate().fadeIn(duration: 400.ms, delay: 600.ms).slideY(begin: 0.1, end: 0, duration: 400.ms, delay: 600.ms);
   }
 
   /// Renders **bold** markdown in the message text.
@@ -450,8 +604,8 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
     final baseColor = isUser
         ? Colors.white
         : isDark
-            ? AppTheme.darkText
-            : AppTheme.lightText;
+            ? AppColors.darkText
+            : AppColors.lightText;
 
     // Simple **bold** parser
     final spans = <TextSpan>[];
@@ -529,7 +683,7 @@ class _TypingDotsState extends State<_TypingDots> with TickerProviderStateMixin 
               height: 7,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: AppTheme.primaryDark.withOpacity(0.7),
+                color: AppColors.primary.withOpacity(0.7),
                 shape: BoxShape.circle,
               ),
             ),
