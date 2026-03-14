@@ -1124,6 +1124,8 @@ class AppState extends ChangeNotifier {
         debts: _debts,
         bills: _utilityBills,
         monthlyIncome: _monthlyIncome,
+        savingsGoals: _savingsGoals,
+        emergencyContacts: _emergencyContacts,
         history: _chatMessages,
       );
 
@@ -1380,6 +1382,245 @@ class AppState extends ChangeNotifier {
         // Store the navigation target — UI will read this
         _pendingNavigation = action.data['screen'];
         notifyListeners();
+        break;
+
+      // ── UPDATE TASK ──
+      case 'update_task':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _householdTasks.firstWhere((t) => t.id == id,
+              orElse: () => HouseholdTask(id: '', title: '', category: ''));
+          if (existing.id.isNotEmpty) {
+            DateTime? newDue;
+            final ds = action.data['new_due_date']?.toString().toLowerCase();
+            if (ds == 'today') newDue = DateTime.now();
+            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
+            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+
+            final updated = HouseholdTask(
+              id: existing.id,
+              title: action.data['new_title'] ?? existing.title,
+              category: action.data['new_category'] ?? existing.category,
+              priority: action.data['new_priority'] ?? existing.priority,
+              dueDate: newDue ?? existing.dueDate,
+              isCompleted: existing.isCompleted,
+              assignedTo: existing.assignedTo,
+            );
+            await updateHouseholdTask(updated);
+          }
+        }
+        break;
+
+      // ── ASSIGN TASK ──
+      case 'assign_task':
+        final id = action.data['id'] as String? ?? '';
+        final assignTo = action.data['assign_to']?.toString() ?? '';
+        if (id.isNotEmpty) {
+          final existing = _householdTasks.firstWhere((t) => t.id == id,
+              orElse: () => HouseholdTask(id: '', title: '', category: ''));
+          if (existing.id.isNotEmpty) {
+            final updated = HouseholdTask(
+              id: existing.id,
+              title: existing.title,
+              category: existing.category,
+              priority: existing.priority,
+              dueDate: existing.dueDate,
+              isCompleted: existing.isCompleted,
+              assignedTo: assignTo,
+            );
+            await updateHouseholdTask(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE GROCERY ──
+      case 'update_grocery':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _groceryItems.firstWhere((g) => g.id == id,
+              orElse: () => GroceryItem(id: '', name: ''));
+          if (existing.id.isNotEmpty) {
+            final updated = GroceryItem(
+              id: existing.id,
+              name: existing.name,
+              quantity: (action.data['new_quantity'] ?? existing.quantity) is int
+                  ? (action.data['new_quantity'] ?? existing.quantity)
+                  : int.tryParse(action.data['new_quantity'].toString()) ?? existing.quantity,
+              unit: action.data['new_unit'] ?? existing.unit,
+              category: existing.category,
+              isPurchased: existing.isPurchased,
+            );
+            await updateGroceryItem(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE EXPENSE ──
+      case 'update_expense':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _expenses.firstWhere((e) => e.id == id,
+              orElse: () => Expense(id: '', title: '', amount: 0, category: '', date: DateTime.now()));
+          if (existing.id.isNotEmpty) {
+            final newAmount = action.data['new_amount'] != null
+                ? (action.data['new_amount'] as num).toDouble()
+                : existing.amount;
+            final updated = Expense(
+              id: existing.id,
+              title: existing.title,
+              amount: newAmount,
+              category: action.data['new_category'] ?? existing.category,
+              date: existing.date,
+            );
+            await updateExpense(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE BILL ──
+      case 'update_bill':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _utilityBills.firstWhere((b) => b.id == id,
+              orElse: () => UtilityBill(id: '', type: '', amount: 0, billDate: DateTime.now(), dueDate: DateTime.now()));
+          if (existing.id.isNotEmpty) {
+            final newAmount = action.data['new_amount'] != null
+                ? (action.data['new_amount'] as num).toDouble()
+                : existing.amount;
+            DateTime? newDue;
+            final ds = action.data['new_due_date']?.toString().toLowerCase();
+            if (ds == 'today') newDue = DateTime.now();
+            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
+            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+
+            final updated = UtilityBill(
+              id: existing.id,
+              type: existing.type,
+              amount: newAmount,
+              billDate: existing.billDate,
+              dueDate: newDue ?? existing.dueDate,
+              isPaid: existing.isPaid,
+            );
+            await updateUtilityBill(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE DEBT ──
+      case 'update_debt':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _debts.firstWhere((d) => d.id == id,
+              orElse: () => Debt(id: '', name: '', totalAmount: 0));
+          if (existing.id.isNotEmpty) {
+            final newPayment = action.data['new_monthly_payment'] != null
+                ? (action.data['new_monthly_payment'] as num).toDouble()
+                : existing.monthlyPayment;
+            final newRate = action.data['new_interest_rate'] != null
+                ? (action.data['new_interest_rate'] as num).toDouble()
+                : existing.interestRate;
+            final updated = Debt(
+              id: existing.id,
+              name: existing.name,
+              totalAmount: existing.totalAmount,
+              paidAmount: existing.paidAmount,
+              monthlyPayment: newPayment,
+              interestRate: newRate,
+            );
+            await updateDebt(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE SAVINGS ──
+      case 'update_savings':
+        final keyword = (action.data['goalName'] ?? '').toString().toLowerCase();
+        final goal = _savingsGoals.firstWhere(
+          (g) => g.name.toLowerCase().contains(keyword),
+          orElse: () => SavingsGoal(id: '', name: '', targetAmount: 0),
+        );
+        if (goal.id.isNotEmpty) {
+          final newTarget = action.data['new_target_amount'] != null
+              ? (action.data['new_target_amount'] as num).toDouble()
+              : goal.targetAmount;
+          final newContribution = action.data['new_monthly_contribution'] != null
+              ? (action.data['new_monthly_contribution'] as num).toDouble()
+              : goal.monthlyContribution;
+          final updated = SavingsGoal(
+            id: goal.id,
+            name: goal.name,
+            targetAmount: newTarget,
+            currentAmount: goal.currentAmount,
+            monthlyContribution: newContribution,
+            icon: goal.icon,
+          );
+          await updateSavingsGoal(updated);
+        }
+        break;
+
+      // ── UPDATE MAINTENANCE ──
+      case 'update_maintenance':
+        final id = action.data['id'] as String? ?? '';
+        if (id.isNotEmpty) {
+          final existing = _maintenanceTasks.firstWhere((t) => t.id == id,
+              orElse: () => MaintenanceTask(id: '', name: '', category: ''));
+          if (existing.id.isNotEmpty) {
+            DateTime? newDue;
+            final ds = action.data['new_due_date']?.toString().toLowerCase();
+            if (ds == 'today') newDue = DateTime.now();
+            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
+            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+
+            final newRecurring = action.data['new_recurring_days'] != null
+                ? (action.data['new_recurring_days'] as num).toInt()
+                : existing.recurringDays;
+
+            final updated = MaintenanceTask(
+              id: existing.id,
+              name: existing.name,
+              category: existing.category,
+              nextDue: newDue ?? existing.nextDue,
+              recurringDays: newRecurring,
+              isCompleted: existing.isCompleted,
+            );
+            await updateMaintenanceTask(updated);
+          }
+        }
+        break;
+
+      // ── UPDATE EMERGENCY CONTACT ──
+      case 'update_emergency_contact':
+        final keyword = (action.data['name'] ?? '').toString().toLowerCase();
+        final contact = _emergencyContacts.firstWhere(
+          (c) => c.name.toLowerCase().contains(keyword),
+          orElse: () => EmergencyContact(id: '', name: '', phone: '', category: ''),
+        );
+        if (contact.id.isNotEmpty) {
+          final updated = EmergencyContact(
+            id: contact.id,
+            name: contact.name,
+            phone: action.data['new_phone'] ?? contact.phone,
+            category: action.data['new_category'] ?? contact.category,
+          );
+          await updateEmergencyContact(updated);
+        }
+        break;
+
+      // ── TOGGLE NOTIFICATIONS ──
+      case 'toggle_notifications':
+        final enabled = action.data['enabled'];
+        toggleNotificationsEnabled(enabled == true || enabled == 'true');
+        break;
+
+      // ── SEND FAMILY MESSAGE ──
+      case 'send_family_message':
+        final message = action.data['message']?.toString() ?? '';
+        if (message.isNotEmpty) {
+          await sendFamilyChatMessage(message);
+        }
         break;
     }
   }

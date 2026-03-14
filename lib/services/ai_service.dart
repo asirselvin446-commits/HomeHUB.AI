@@ -100,6 +100,10 @@ class AIService {
       return AIResult(reply: _queryMaintenance(q, maintenanceTasks));
     }
 
+    // ── 11b. Emergency Contact (regex fallback) ──
+    final addContact = _detectAddContact(q, message);
+    if (addContact != null) return addContact;
+
     // ── 12. QUERY: Financial Insights ──
     if (_isFinancialQuery(q)) {
       return AIResult(reply: _queryFinancialInsights(expenses, debts, monthlyIncome));
@@ -215,6 +219,8 @@ class AIService {
     required List<Debt> debts,
     required List<UtilityBill> bills,
     required double monthlyIncome,
+    List<SavingsGoal> savingsGoals = const [],
+    List<EmergencyContact> emergencyContacts = const [],
     List<ChatMessage> history = const [],
   }) async {
     // If LLM is not configured, use the regex engine directly
@@ -232,8 +238,28 @@ class AIService {
     }
 
     try {
-      final json = await LLMService.sendMessage(message, history: history);
+      // Pass ALL live app data so Gemini can reason about actual household state
+      final json = await LLMService.sendMessage(
+        message,
+        history: history,
+        tasks: householdTasks,
+        groceryItems: groceryItems,
+        expenses: expenses,
+        debts: debts,
+        bills: bills,
+        maintenanceTasks: maintenanceTasks,
+        savingsGoals: savingsGoals,
+        emergencyContacts: emergencyContacts,
+        monthlyIncome: monthlyIncome,
+      );
       final intent = json['intent'] as String? ?? '';
+
+      // Extract LLM's smart reply — use it when available
+      String? _lr = json['reply'] as String?;
+      if (_lr != null && (_lr.trim().isEmpty || _lr.contains('[Use LIVE DATA'))) _lr = null;
+
+      // Helper to prefer LLM reply, fall back to hardcoded
+      String _reply(String fallback) => _lr ?? fallback;
 
       switch (intent) {
         case 'create_task':
@@ -248,7 +274,7 @@ class AIService {
 
           final dateStr = due != null ? ' for **${DateFormat('MMM dd').format(due)}**' : '';
           return AIResult(
-            reply: 'Task added successfully: **$title**$dateStr ✅',
+            reply: _reply('Task added successfully: **$title**$dateStr ✅'),
             action: AIAction(type: 'add_task', data: {
               'title': title,
               'category': category,
@@ -265,7 +291,7 @@ class AIService {
           );
           if (task.id.isNotEmpty) {
             return AIResult(
-              reply: 'Task marked as completed: **${task.title}** ✅',
+              reply: _reply('Task marked as completed: **${task.title}** ✅'),
               action: AIAction(type: 'complete_task', data: {'id': task.id}),
             );
           }
@@ -318,6 +344,20 @@ class AIService {
             action: AIAction(type: 'add_grocery_multi', data: {'items': parsedItems}),
           );
 
+        case 'buy_grocery':
+          final kw = (json['item'] ?? '').toString().toLowerCase();
+          final item = groceryItems.firstWhere(
+            (g) => !g.isPurchased && g.name.toLowerCase().contains(kw),
+            orElse: () => GroceryItem(id: '', name: ''),
+          );
+          if (item.id.isNotEmpty) {
+            return AIResult(
+              reply: '**${item.name}** marked as purchased ✅',
+              action: AIAction(type: 'complete_grocery', data: {'id': item.id}),
+            );
+          }
+          return AIResult(reply: 'Could not find "$kw" on your grocery list.');
+
         case 'remove_grocery':
           final kw = (json['item'] ?? '').toString().toLowerCase();
           final item = groceryItems.firstWhere(
@@ -340,16 +380,22 @@ class AIService {
             return AIResult(reply: 'Could not determine the amount. Try "spent 500 on groceries".');
           }
           return AIResult(
-            reply: 'Expense recorded: **$title** — ${_cur.format(amount)} 💸',
+            reply: _reply('Expense recorded: **$title** — ${_cur.format(amount)} 💸'),
             action: AIAction(type: 'add_expense', data: {
               'title': title, 'amount': amount, 'category': category,
             }),
           );
 
         case 'show_finance_summary':
-          return AIResult(reply: _queryExpenses(expenses, monthlyIncome));
+          return AIResult(reply: json['reply'] as String? ?? _queryExpenses(expenses, monthlyIncome));
 
         case 'general_query':
+          // PRIORITIZE the LLM's data-aware reply — it has full app context
+          final llmReply = json['reply'] as String?;
+          if (llmReply != null && llmReply.trim().isNotEmpty && !llmReply.contains('[Use LIVE DATA')) {
+            return AIResult(reply: llmReply);
+          }
+          // Fallback to local methods only if LLM didn't provide a usable reply
           final queryType = json['query_type'] ?? 'other';
           switch (queryType) {
             case 'tasks':
@@ -385,7 +431,7 @@ class AIService {
                 'Anytime! I\'m here whenever you need me 👍',
               ]));
             case 'savings':
-              return AIResult(reply: _querySavings([])); // placeholder — actual data passed via action
+              return AIResult(reply: _querySavings(savingsGoals));
             default:
               return AIResult(reply: _helpMessage());
           }
@@ -644,8 +690,186 @@ class AIService {
         case 'navigate':
           final screen = json['screen'] ?? 'home';
           return AIResult(
-            reply: 'Navigating to **${_titleCase(screen)}** 📱',
+            reply: _reply('Navigating to **${_titleCase(screen)}** 📱'),
             action: AIAction(type: 'navigate', data: {'screen': screen}),
+          );
+
+        // ── UPDATE TASK ──
+        case 'update_task':
+          final keyword = (json['task_title'] ?? '').toString().toLowerCase();
+          final task = householdTasks.firstWhere(
+            (t) => t.title.toLowerCase().contains(keyword),
+            orElse: () => HouseholdTask(id: '', title: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('Task **${task.title}** updated 📝'),
+              action: AIAction(type: 'update_task', data: {
+                'id': task.id,
+                'new_title': json['new_title'],
+                'new_priority': json['new_priority'],
+                'new_category': json['new_category'],
+                'new_due_date': json['new_due_date'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No task found matching "$keyword".');
+
+        // ── ASSIGN TASK ──
+        case 'assign_task':
+          final keyword = (json['task_title'] ?? '').toString().toLowerCase();
+          final assignTo = json['assign_to'] ?? '';
+          final task = householdTasks.firstWhere(
+            (t) => t.title.toLowerCase().contains(keyword),
+            orElse: () => HouseholdTask(id: '', title: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${task.title}** assigned to **${_titleCase(assignTo)}** 👤'),
+              action: AIAction(type: 'assign_task', data: {
+                'id': task.id,
+                'assign_to': assignTo,
+              }),
+            );
+          }
+          return AIResult(reply: 'No task found matching "$keyword".');
+
+        // ── UPDATE GROCERY ──
+        case 'update_grocery':
+          final keyword = (json['item'] ?? '').toString().toLowerCase();
+          final item = groceryItems.firstWhere(
+            (g) => g.name.toLowerCase().contains(keyword),
+            orElse: () => GroceryItem(id: '', name: ''),
+          );
+          if (item.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${item.name}** updated 📝'),
+              action: AIAction(type: 'update_grocery', data: {
+                'id': item.id,
+                'new_quantity': json['new_quantity'],
+                'new_unit': json['new_unit'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No grocery item found matching "$keyword".');
+
+        // ── UPDATE EXPENSE ──
+        case 'update_expense':
+          final keyword = (json['title'] ?? '').toString().toLowerCase();
+          final expense = expenses.firstWhere(
+            (e) => e.title.toLowerCase().contains(keyword),
+            orElse: () => Expense(id: '', title: '', amount: 0, category: '', date: DateTime.now()),
+          );
+          if (expense.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${expense.title}** expense updated 📝'),
+              action: AIAction(type: 'update_expense', data: {
+                'id': expense.id,
+                'new_amount': json['new_amount'],
+                'new_category': json['new_category'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No expense found matching "$keyword".');
+
+        // ── UPDATE BILL ──
+        case 'update_bill':
+          final keyword = (json['bill_type'] ?? '').toString().toLowerCase();
+          final bill = bills.firstWhere(
+            (b) => b.type.toLowerCase().contains(keyword),
+            orElse: () => UtilityBill(id: '', type: '', amount: 0, billDate: DateTime.now(), dueDate: DateTime.now()),
+          );
+          if (bill.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${bill.type}** bill updated 📝'),
+              action: AIAction(type: 'update_bill', data: {
+                'id': bill.id,
+                'new_amount': json['new_amount'],
+                'new_due_date': json['new_due_date'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No bill found matching "$keyword".');
+
+        // ── UPDATE DEBT ──
+        case 'update_debt':
+          final keyword = (json['debt_name'] ?? '').toString().toLowerCase();
+          final debt = debts.firstWhere(
+            (d) => d.name.toLowerCase().contains(keyword),
+            orElse: () => Debt(id: '', name: '', totalAmount: 0),
+          );
+          if (debt.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${debt.name}** updated 📝'),
+              action: AIAction(type: 'update_debt', data: {
+                'id': debt.id,
+                'new_monthly_payment': json['new_monthly_payment'],
+                'new_interest_rate': json['new_interest_rate'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No debt found matching "$keyword".');
+
+        // ── UPDATE SAVINGS ──
+        case 'update_savings':
+          final keyword = (json['goal_name'] ?? '').toString().toLowerCase();
+          return AIResult(
+            reply: _reply('**${_titleCase(keyword)}** savings goal updated 📝'),
+            action: AIAction(type: 'update_savings', data: {
+              'goalName': keyword,
+              'new_target_amount': json['new_target_amount'],
+              'new_monthly_contribution': json['new_monthly_contribution'],
+            }),
+          );
+
+        // ── UPDATE MAINTENANCE ──
+        case 'update_maintenance':
+          final keyword = (json['task_name'] ?? '').toString().toLowerCase();
+          final task = maintenanceTasks.firstWhere(
+            (t) => t.name.toLowerCase().contains(keyword),
+            orElse: () => MaintenanceTask(id: '', name: '', category: ''),
+          );
+          if (task.id.isNotEmpty) {
+            return AIResult(
+              reply: _reply('**${task.name}** maintenance updated 📝'),
+              action: AIAction(type: 'update_maintenance', data: {
+                'id': task.id,
+                'new_due_date': json['new_due_date'],
+                'new_recurring_days': json['new_recurring_days'],
+              }),
+            );
+          }
+          return AIResult(reply: 'No maintenance task found matching "$keyword".');
+
+        // ── UPDATE EMERGENCY CONTACT ──
+        case 'update_emergency_contact':
+          final keyword = (json['name'] ?? '').toString().toLowerCase();
+          return AIResult(
+            reply: _reply('**${_titleCase(keyword)}** contact updated 📝'),
+            action: AIAction(type: 'update_emergency_contact', data: {
+              'name': keyword,
+              'new_phone': json['new_phone'],
+              'new_category': json['new_category'],
+            }),
+          );
+
+        // ── TOGGLE NOTIFICATIONS ──
+        case 'toggle_notifications':
+          final enabled = json['enabled'] ?? true;
+          return AIResult(
+            reply: _reply(enabled == true ? 'Notifications enabled 🔔' : 'Notifications disabled 🔕'),
+            action: AIAction(type: 'toggle_notifications', data: {'enabled': enabled}),
+          );
+
+        // ── SEND FAMILY MESSAGE ──
+        case 'send_family_message':
+          final message = json['message'] ?? '';
+          if (message.toString().isEmpty) {
+            return AIResult(reply: 'What would you like to tell the family?');
+          }
+          return AIResult(
+            reply: _reply('📨 Message sent to family chat!'),
+            action: AIAction(type: 'send_family_message', data: {'message': message}),
           );
 
         default:
@@ -800,6 +1024,11 @@ class AIService {
     if (!RegExp(r'\d').hasMatch(q)) return null;
     // Exclude if it's clearly a task or grocery intent
     if (q.contains('task') || q.contains('grocery') || q.contains('groceries')) return null;
+    // Exclude phone numbers / contacts — numbers with 7+ digits are likely phone numbers
+    if (q.contains('number') || q.contains('phone') || q.contains('contact') ||
+        q.contains('call') || q.contains('plumber') || q.contains('electrician') ||
+        q.contains('doctor') || q.contains('hospital') || q.contains('emergency')) return null;
+    if (RegExp(r'\d{7,}').hasMatch(q)) return null; // 7+ digit number = phone, not expense
 
     for (final p in patterns) {
       final m = p.firstMatch(original);
@@ -1004,7 +1233,7 @@ class AIService {
       // Check if this looks like a maintenance item (contains service-related keywords)
       final rl = raw.toLowerCase();
       bool isMaintenance = rl.contains('service') || rl.contains('servic') || rl.contains('clean') ||
-          rl.contains('repair') || rl.contains('fix') || rl.contains('plumb') || rl.contains('ac') ||
+          rl.contains('repair') || rl.contains('fix') || rl.contains('plumb') || _wordAc.hasMatch(rl) ||
           rl.contains('filter') || rl.contains('tank') || rl.contains('purif');
       if (!isMaintenance && !q.contains('schedule') && !q.contains('book')) continue;
 
@@ -1036,6 +1265,61 @@ class AIService {
   }
 
   // ═══════════════════════════════════════════════════════════════
+  //  INTENT: Add Emergency Contact (regex fallback)
+  // ═══════════════════════════════════════════════════════════════
+
+  static AIResult? _detectAddContact(String q, String original) {
+    // Patterns: "add contact Raj 9876543210", "add number 8940520101",
+    //           "add plumber 9876543210", "save number selvin 894..."
+    final patterns = [
+      // "add contact selvin 8940520101" or "add contact selvin : 8940520101"
+      RegExp(r'(?:add|save|store|new)\s+(?:a\s+)?(?:contact|number|phone)\s+(.+?)\s*[:\-]?\s*(\d{7,})', caseSensitive: false),
+      // "add plumber raj 9876543210"
+      RegExp(r'(?:add|save|store)\s+(?:a\s+)?(?:plumber|electrician|doctor|hospital|emergency)\s+(.+?)\s*[:\-]?\s*(\d{7,})', caseSensitive: false),
+      // "selvin : 8940520101 add contact"
+      RegExp(r'(.+?)\s*[:\-]?\s*(\d{7,})\s*(?:add|save|as)?\s*(?:contact|number|phone)?', caseSensitive: false),
+    ];
+
+    // Must have a 7+ digit number and contact-related keywords
+    if (!RegExp(r'\d{7,}').hasMatch(q)) return null;
+    if (!q.contains('contact') && !q.contains('number') && !q.contains('phone') &&
+        !q.contains('plumber') && !q.contains('electrician') && !q.contains('doctor') &&
+        !q.contains('emergency') && !q.contains('hospital') && !q.contains('save') &&
+        !q.contains('call')) return null;
+
+    for (final p in patterns) {
+      final m = p.firstMatch(original);
+      if (m == null) continue;
+      String nameRaw = m.group(1)?.trim() ?? '';
+      String phone = m.group(2)?.trim() ?? '';
+      if (nameRaw.isEmpty || phone.isEmpty || phone.length < 7) continue;
+
+      // Clean up name: remove filler words
+      nameRaw = nameRaw.replaceAll(RegExp(r'^(a|an|the|my|our)\s+', caseSensitive: false), '').trim();
+      if (nameRaw.isEmpty) nameRaw = 'Contact';
+
+      // Detect category from keywords
+      String cat = 'Emergency';
+      final nl = nameRaw.toLowerCase();
+      if (nl.contains('plumb')) cat = 'Plumber';
+      else if (nl.contains('electr')) cat = 'Electrician';
+      else if (nl.contains('doctor') || nl.contains('dr')) cat = 'Hospital';
+      else if (nl.contains('hospital')) cat = 'Hospital';
+      else if (nl.contains('fire')) cat = 'Emergency';
+      else if (nl.contains('police')) cat = 'Emergency';
+
+      final name = _titleCase(nameRaw);
+      return AIResult(
+        reply: 'Emergency contact added: **$name** ($phone) 📞',
+        action: AIAction(type: 'add_emergency_contact', data: {
+          'name': name, 'phone': phone, 'category': cat,
+        }),
+      );
+    }
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
   //  QUERY MATCHERS
   // ═══════════════════════════════════════════════════════════════
 
@@ -1050,8 +1334,11 @@ class AIService {
   static bool _isExpenseQuery(String q) =>
       (q.contains('spend') || q.contains('spent') || q.contains('expense') || q.contains('budget') || q.contains('how much'));
 
+  static final _wordAc = RegExp(r'\bac\b', caseSensitive: false);
+  static final _wordService = RegExp(r'\bservice\b', caseSensitive: false);
+
   static bool _isMaintenanceQuery(String q) =>
-      (q.contains('maintenance') || q.contains('service') || q.contains('servicing') || q.contains('ac') || q.contains('plumb'));
+      (q.contains('maintenance') || _wordService.hasMatch(q) || q.contains('servicing') || _wordAc.hasMatch(q) || q.contains('plumb'));
 
   static bool _isFinancialQuery(String q) =>
       q.contains('financial') || q.contains('finance') || q.contains('saving') || q.contains('insight') || q.contains('invest');
@@ -1141,8 +1428,19 @@ class AIService {
   // ═══════════════════════════════════════════════════════════════
 
   static String _queryMaintenance(String q, List<MaintenanceTask> tasks) {
-    // Specific lookup
-    final kw = {'ac': 'ac', 'air condition': 'ac', 'plumb': 'plumb', 'electr': 'electr', 'water': 'water', 'purifier': 'purif'};
+    // Specific lookup — use word-boundary for short keywords like 'ac'
+    // Check 'ac' separately with word boundary to avoid matching 'contact', 'back', etc.
+    if (_wordAc.hasMatch(q)) {
+      final t = tasks.firstWhere(
+        (t) => t.name.toLowerCase().contains('ac') || t.category.toLowerCase().contains('ac'),
+        orElse: () => MaintenanceTask(id: '', name: '', category: ''),
+      );
+      if (t.id.isNotEmpty && t.nextDue != null) {
+        final od = t.isOverdue ? ' ⚠️ OVERDUE' : '';
+        return '${t.name}: scheduled for **${DateFormat('MMM dd, yyyy').format(t.nextDue!)}**$od';
+      }
+    }
+    final kw = {'air condition': 'ac', 'plumb': 'plumb', 'electr': 'electr', 'water': 'water', 'purifier': 'purif'};
     for (final e in kw.entries) {
       if (!q.contains(e.key)) continue;
       final t = tasks.firstWhere(

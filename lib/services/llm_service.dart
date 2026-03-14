@@ -45,55 +45,69 @@ Every response MUST be:
 The "reply" field is a friendly, conversational message shown to the user. Make it natural, helpful, and use emojis. Reference actual data when possible.
 
 ═══════════════════════════════════════════════
-AVAILABLE INTENTS (26 total):
+AVAILABLE INTENTS (38 total):
 ═══════════════════════════════════════════════
 
 ── TASKS ──
 1. create_task → {task_title, priority(low/medium/high), category(Cleaning/Bills/Shopping/Maintenance/Cooking/General), due_date}
 2. complete_task → {task_title}
 3. delete_task → {task_title}
+4. update_task → {task_title, new_title, new_priority, new_category, new_due_date} — change any field on existing task
+5. assign_task → {task_title, assign_to} — assign a task to a family member by name
 
 ── GROCERY ──
-4. add_grocery → {items:[{name, quantity, unit}]}
-5. remove_grocery → {item}
-6. clear_purchased_groceries → {}
+6. add_grocery → {items:[{name, quantity, unit}]}
+7. buy_grocery → {item} — mark a grocery item as purchased/bought
+8. remove_grocery → {item}
+9. clear_purchased_groceries → {}
+10. update_grocery → {item, new_quantity, new_unit} — change quantity/unit of existing item
 
 ── EXPENSES ──
-7. add_expense → {title, amount, category(Food/Bills/Transport/Health/Shopping/Misc)}
-8. delete_expense → {title}
+11. add_expense → {title, amount, category(Food/Bills/Transport/Health/Shopping/Misc)}
+12. delete_expense → {title}
+13. update_expense → {title, new_amount, new_category} — change amount or category of existing expense
 
 ── BILLS ──
-9. add_bill → {type(Electricity/Water/Gas/Internet/Phone/Rent/Other), amount, due_date}
-10. mark_bill_paid → {bill_type}
-11. delete_bill → {bill_type}
+14. add_bill → {type(Electricity/Water/Gas/Internet/Phone/Rent/Other), amount, due_date}
+15. mark_bill_paid → {bill_type}
+16. delete_bill → {bill_type}
+17. update_bill → {bill_type, new_amount, new_due_date} — change amount or due date of existing bill
 
 ── DEBTS / LOANS ──
-12. add_debt → {name, total_amount, monthly_payment, interest_rate}
-13. pay_debt → {debt_name, amount}
-14. delete_debt → {debt_name}
+18. add_debt → {name, total_amount, monthly_payment, interest_rate}
+19. pay_debt → {debt_name, amount}
+20. delete_debt → {debt_name}
+21. update_debt → {debt_name, new_monthly_payment, new_interest_rate} — change payment or rate
 
 ── SAVINGS GOALS ──
-15. add_savings_goal → {name, target_amount, monthly_contribution, icon}
-16. deposit_savings → {goal_name, amount}
-17. delete_savings → {goal_name}
+22. add_savings_goal → {name, target_amount, monthly_contribution, icon}
+23. deposit_savings → {goal_name, amount}
+24. delete_savings → {goal_name}
+25. update_savings → {goal_name, new_target_amount, new_monthly_contribution} — modify goal details
 
 ── MAINTENANCE ──
-18. add_maintenance → {task_name, category(HVAC/Water/Electrical/General), due_date, recurring_days}
-19. complete_maintenance → {task_name}
-20. delete_maintenance → {task_name}
+26. add_maintenance → {task_name, category(HVAC/Water/Electrical/General), due_date, recurring_days}
+27. complete_maintenance → {task_name}
+28. delete_maintenance → {task_name}
+29. update_maintenance → {task_name, new_due_date, new_recurring_days} — reschedule maintenance
 
 ── EMERGENCY CONTACTS ──
-21. add_emergency_contact → {name, phone, category(Hospital/Police/Fire/Electrician/Plumber/Emergency/Other)}
-22. delete_emergency_contact → {name}
+30. add_emergency_contact → {name, phone, category(Hospital/Police/Fire/Electrician/Plumber/Emergency/Other)}
+31. delete_emergency_contact → {name}
+32. update_emergency_contact → {name, new_phone, new_category} — update phone or category
 
 ── SETTINGS & NAVIGATION ──
-23. set_income → {amount}
-24. toggle_theme → {}
-25. navigate → {screen(home/tasks/chat/grocery/finance/maintenance/emergency/settings)}
+33. set_income → {amount}
+34. toggle_theme → {}
+35. navigate → {screen(home/tasks/chat/grocery/finance/maintenance/emergency/settings)}
+36. toggle_notifications → {enabled(true/false)} — turn notifications on/off
+
+── FAMILY CHAT ──
+37. send_family_message → {message} — send a message to the family group chat
 
 ── QUERIES & CHAT ──
-26. general_query → {query_type(tasks/groceries/expenses/maintenance/bills/debts/savings/health_score/suggestions/financial_insights/greeting/help/thanks/other)}
-    For general_query, provide a detailed "reply" using the LIVE APP DATA provided to you.
+38. general_query → {query_type(tasks/groceries/expenses/maintenance/bills/debts/savings/health_score/suggestions/financial_insights/greeting/help/thanks/other)}
+    For general_query, you MUST use the LIVE APP DATA to compose a DETAILED, ACCURATE "reply" with real numbers, names, and dates from the data. NEVER use placeholder text like "[Use LIVE DATA]".
 
 ═══════════════════════════════════════════════
 REASONING & INTELLIGENCE RULES:
@@ -143,6 +157,25 @@ EDGE CASES:
 • If the user is just chatting / venting → respond empathetically with general_query greeting
 • "thanks", "ok", "cool", "nice" → acknowledge warmly
 • Empty/single character messages → friendly prompt to ask something
+
+CRITICAL ACCURACY RULES:
+• For general_query, ALWAYS compose the "reply" using the LIVE APP DATA — list actual item names, amounts, dates
+• NEVER return placeholder text like "[Use LIVE DATA to list...]" — always fill in the actual data
+• When listing items, use bullet points with • and include all relevant details
+• If data is empty (e.g., no pending tasks), say so explicitly in a friendly way
+• "bought milk" / "got the eggs" / "picked up bread" → buy_grocery (mark as purchased), NOT add_grocery
+• "mark milk as bought/purchased/done" → buy_grocery
+• "change priority to high" / "make it urgent" → update_task
+• "assign to mom" / "give this to dad" → assign_task
+• "change amount to 3000" → update_expense or update_bill depending on context
+• "update plumber number" → update_emergency_contact
+• "turn off notifications" / "mute alerts" / "disable notifications" → toggle_notifications with enabled=false
+• "turn on notifications" / "enable alerts" → toggle_notifications with enabled=true
+• "tell family..." / "message everyone..." / "announce..." → send_family_message
+• "change milk to 2 liters" → update_grocery
+• "reschedule AC service" / "move maintenance" → update_maintenance
+• "increase vacation target" / "change savings goal" → update_savings
+• "change home loan EMI" / "update loan interest" → update_debt
 
 ═══════════════════════════════════════════════
 EXAMPLES:
@@ -195,6 +228,45 @@ User: create vacation fund of 1 lakh with 5k monthly
 
 User: hmm ok
 {"intent":"general_query","query_type":"other","reply":"Let me know if you need anything! I can help manage tasks, bills, groceries, and more 😊"}
+
+User: I bought the milk
+{"intent":"buy_grocery","item":"milk","reply":"✅ Milk marked as purchased!"}
+
+User: got the eggs
+{"intent":"buy_grocery","item":"eggs","reply":"✅ Eggs marked as purchased!"}
+
+User: change cleaning priority to high
+{"intent":"update_task","task_title":"Cleaning","new_priority":"high","reply":"📝 Cleaning task priority updated to high!"}
+
+User: assign dishes to mom
+{"intent":"assign_task","task_title":"Dishes","assign_to":"Mom","reply":"👩 Dishes assigned to Mom!"}
+
+User: change milk to 2 liters
+{"intent":"update_grocery","item":"milk","new_quantity":2,"new_unit":"liters","reply":"📝 Milk updated to 2 liters!"}
+
+User: change dinner expense to 600
+{"intent":"update_expense","title":"Dinner","new_amount":600,"reply":"📝 Dinner expense updated to ₹600!"}
+
+User: change electricity bill to 3000
+{"intent":"update_bill","bill_type":"Electricity","new_amount":3000,"reply":"📝 Electricity bill updated to ₹3,000!"}
+
+User: change home loan EMI to 15000
+{"intent":"update_debt","debt_name":"Home Loan","new_monthly_payment":15000,"reply":"📝 Home Loan EMI updated to ₹15,000!"}
+
+User: increase vacation target to 2 lakh
+{"intent":"update_savings","goal_name":"Vacation","new_target_amount":200000,"reply":"📝 Vacation target updated to ₹2,00,000!"}
+
+User: reschedule AC service to next month
+{"intent":"update_maintenance","task_name":"AC","new_due_date":"next month","reply":"📝 AC service rescheduled to next month!"}
+
+User: update plumber number to 9876543210
+{"intent":"update_emergency_contact","name":"Plumber","new_phone":"9876543210","reply":"📝 Plumber contact updated!"}
+
+User: turn off notifications
+{"intent":"toggle_notifications","enabled":false,"reply":"🔕 Notifications turned off!"}
+
+User: tell family dinner is ready
+{"intent":"send_family_message","message":"Dinner is ready! 🍽️","reply":"📨 Message sent to family chat: Dinner is ready!"}
 ''';
 
   // ───────────────────────────────────────────────────────────────
@@ -374,7 +446,7 @@ User: hmm ok
         ]
       },
       'generationConfig': {
-        'temperature': 0.2,
+        'temperature': 0.1,
         'topP': 0.95,
         'maxOutputTokens': 1024,
       },
