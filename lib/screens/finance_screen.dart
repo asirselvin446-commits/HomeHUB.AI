@@ -4,9 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class FinanceScreen extends StatefulWidget {
@@ -187,9 +185,9 @@ class _ExpensesTab extends StatelessWidget {
               margin: EdgeInsets.only(bottom: 12),
               padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: AppColors.info.withOpacity(0.1),
+                color: AppColors.info.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.info.withOpacity(0.3)),
+                border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
               ),
               child: Row(
                 children: [
@@ -225,7 +223,7 @@ class _ExpensesTab extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
@@ -322,13 +320,13 @@ class _ExpensesTab extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.1),
-                    AppColors.primary.withOpacity(0.05),
+                    AppColors.primary.withValues(alpha: 0.1),
+                    AppColors.primary.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: AppColors.primary.withValues(alpha: 0.2),
                 ),
               ),
               child: Column(
@@ -402,7 +400,7 @@ class _ExpensesTab extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _getCategoryColor(
                             e.category,
-                          ).withOpacity(0.15),
+                          ).withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -464,7 +462,7 @@ class _ExpensesTab extends StatelessWidget {
                   ),
                 ),
               )
-              .toList(),
+              ,
           SizedBox(height: 80),
         ],
       ),
@@ -562,7 +560,7 @@ class _ExpensesTab extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -590,7 +588,7 @@ class _ExpensesTab extends StatelessWidget {
                   SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: category,
+                      initialValue: category,
                       items:
                           [
                                 'Groceries',
@@ -778,7 +776,7 @@ class _DebtsTab extends StatelessWidget {
             child: LinearProgressIndicator(
               value: debt.progressPercent,
               minHeight: 10,
-              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
@@ -949,7 +947,7 @@ class _DebtsTab extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1129,7 +1127,7 @@ class _SavingsTab extends StatelessWidget {
             child: LinearProgressIndicator(
               value: goal.progressPercent,
               minHeight: 8,
-              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
               valueColor: AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
@@ -1272,7 +1270,7 @@ class _SavingsTab extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1294,7 +1292,7 @@ class _SavingsTab extends StatelessWidget {
                           padding: EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: icon == e
-                                ? AppColors.primary.withOpacity(0.2)
+                                ? AppColors.primary.withValues(alpha: 0.2)
                                 : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -1437,7 +1435,7 @@ class _BillsTab extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     border: bill.isOverdue && !bill.isPaid
                         ? Border.all(
-                            color: AppColors.error.withOpacity(0.4),
+                            color: AppColors.error.withValues(alpha: 0.4),
                           )
                         : null,
                   ),
@@ -1447,7 +1445,7 @@ class _BillsTab extends StatelessWidget {
                         width: 42,
                         height: 42,
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.15),
+                          color: statusColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(typeIcon, color: statusColor, size: 22),
@@ -1576,7 +1574,7 @@ class _BillsTab extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -1591,7 +1589,7 @@ class _BillsTab extends StatelessWidget {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: type,
+                      initialValue: type,
                       items:
                           [
                                 'Electricity',

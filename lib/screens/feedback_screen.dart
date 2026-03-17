@@ -310,17 +310,20 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
     // Simulate sending (replace with actual API call later)
     await Future.delayed(const Duration(seconds: 1));
 
-    if (!mounted) return;
+    if (!context.mounted) return;
 
     setState(() => _isSending = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    messenger.showSnackBar(
       SnackBar(
         content: Text('Thank you! Your $_selectedType has been submitted 🎉'),
         backgroundColor: AppTheme.accentTeal,
       ),
     );
 
-    Navigator.pop(context);
+    navigator.pop();
   }
 }

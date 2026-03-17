@@ -1386,9 +1386,13 @@ class AppState extends ChangeNotifier {
             final ds = action.data['new_due_date']?.toString().toLowerCase();
             if (ds == 'today') {
               newDue = DateTime.now();
-            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
-            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
-            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+            } else if (ds == 'tomorrow') {
+              newDue = DateTime.now().add(const Duration(days: 1));
+            } else if (ds == 'next week') {
+              newDue = DateTime.now().add(const Duration(days: 7));
+            } else if (ds == 'next month') {
+              newDue = DateTime.now().add(const Duration(days: 30));
+            }
 
             final updated = HouseholdTask(
               id: existing.id,
@@ -1484,9 +1488,13 @@ class AppState extends ChangeNotifier {
             final ds = action.data['new_due_date']?.toString().toLowerCase();
             if (ds == 'today') {
               newDue = DateTime.now();
-            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
-            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
-            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+            } else if (ds == 'tomorrow') {
+              newDue = DateTime.now().add(const Duration(days: 1));
+            } else if (ds == 'next week') {
+              newDue = DateTime.now().add(const Duration(days: 7));
+            } else if (ds == 'next month') {
+              newDue = DateTime.now().add(const Duration(days: 30));
+            }
 
             final updated = UtilityBill(
               id: existing.id,
@@ -1564,9 +1572,13 @@ class AppState extends ChangeNotifier {
             final ds = action.data['new_due_date']?.toString().toLowerCase();
             if (ds == 'today') {
               newDue = DateTime.now();
-            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
-            else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
-            else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
+            } else if (ds == 'tomorrow') {
+              newDue = DateTime.now().add(const Duration(days: 1));
+            } else if (ds == 'next week') {
+              newDue = DateTime.now().add(const Duration(days: 7));
+            } else if (ds == 'next month') {
+              newDue = DateTime.now().add(const Duration(days: 30));
+            }
 
             final newRecurring = action.data['new_recurring_days'] != null
                 ? (action.data['new_recurring_days'] as num).toInt()

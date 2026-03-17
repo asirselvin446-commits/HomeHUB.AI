@@ -172,8 +172,11 @@ class AIService {
     String greeting = 'Hello';
     if (hour < 12) {
       greeting = 'Good morning';
-    } else if (hour < 17) greeting = 'Good afternoon';
-    else greeting = 'Good evening';
+    } else if (hour < 17) {
+      greeting = 'Good afternoon';
+    } else {
+      greeting = 'Good evening';
+    }
 
     final pendingTasks = householdTasks.where((t) => !t.isCompleted).toList();
     final overdueTasks = pendingTasks.where((t) => t.isOverdue).toList();
@@ -271,8 +274,11 @@ class AIService {
           final dueStr = json['due_date']?.toString().toLowerCase();
           if (dueStr == 'today') {
             due = DateTime.now();
-          } else if (dueStr == 'tomorrow') due = DateTime.now().add(const Duration(days: 1));
-          else if (dueStr == 'next week') due = DateTime.now().add(const Duration(days: 7));
+          } else if (dueStr == 'tomorrow') {
+            due = DateTime.now().add(const Duration(days: 1));
+          } else if (dueStr == 'next week') {
+            due = DateTime.now().add(const Duration(days: 7));
+          }
 
           final dateStr = due != null ? ' for **${DateFormat('MMM dd').format(due)}**' : '';
           return AIResult(
@@ -461,8 +467,11 @@ class AIService {
           final dueStr = json['due_date']?.toString().toLowerCase();
           if (dueStr == 'today') {
             dueDate = DateTime.now();
-          } else if (dueStr == 'tomorrow') dueDate = DateTime.now().add(const Duration(days: 1));
-          else if (dueStr == 'next week') dueDate = DateTime.now().add(const Duration(days: 7));
+          } else if (dueStr == 'tomorrow') {
+            dueDate = DateTime.now().add(const Duration(days: 1));
+          } else if (dueStr == 'next week') {
+            dueDate = DateTime.now().add(const Duration(days: 7));
+          }
           else if (dueStr != null && dueStr.contains('day')) {
             final d = RegExp(r'\d+').firstMatch(dueStr);
             if (d != null) dueDate = DateTime.now().add(Duration(days: int.tryParse(d.group(0)!) ?? 15));
@@ -955,10 +964,15 @@ class AIService {
       final rl = raw.toLowerCase();
       if (rl.contains('clean') || rl.contains('mop') || rl.contains('vacuum') || rl.contains('wash')) {
         cat = 'Cleaning';
-      } else if (rl.contains('pay') || rl.contains('bill') || rl.contains('bank')) cat = 'Bills';
-      else if (rl.contains('buy') || rl.contains('shop') || rl.contains('grocery')) cat = 'Shopping';
-      else if (rl.contains('fix') || rl.contains('repair') || rl.contains('service')) cat = 'Maintenance';
-      else if (rl.contains('cook') || rl.contains('meal') || rl.contains('food')) cat = 'Cooking';
+      } else if (rl.contains('pay') || rl.contains('bill') || rl.contains('bank')) {
+        cat = 'Bills';
+      } else if (rl.contains('buy') || rl.contains('shop') || rl.contains('grocery')) {
+        cat = 'Shopping';
+      } else if (rl.contains('fix') || rl.contains('repair') || rl.contains('service')) {
+        cat = 'Maintenance';
+      } else if (rl.contains('cook') || rl.contains('meal') || rl.contains('food')) {
+        cat = 'Cooking';
+      }
 
       raw = raw.replaceAll(RegExp(r'\s+'), ' ').replaceAll(RegExp(r'[.!?]+$'), '').trim();
       final title = _titleCase(raw);
@@ -1067,10 +1081,15 @@ class AIService {
       final tl = titleRaw.toLowerCase();
       if (tl.contains('grocer') || tl.contains('food') || tl.contains('meal') || tl.contains('vegetable')) {
         cat = 'Food';
-      } else if (tl.contains('bill') || tl.contains('electric') || tl.contains('water') || tl.contains('rent') || tl.contains('gas')) cat = 'Bills';
-      else if (tl.contains('petrol') || tl.contains('diesel') || tl.contains('travel') || tl.contains('uber') || tl.contains('cab')) cat = 'Transport';
-      else if (tl.contains('medicine') || tl.contains('doctor') || tl.contains('hospital')) cat = 'Health';
-      else if (tl.contains('shop') || tl.contains('cloth') || tl.contains('amazon') || tl.contains('flipkart')) cat = 'Shopping';
+      } else if (tl.contains('bill') || tl.contains('electric') || tl.contains('water') || tl.contains('rent') || tl.contains('gas')) {
+        cat = 'Bills';
+      } else if (tl.contains('petrol') || tl.contains('diesel') || tl.contains('travel') || tl.contains('uber') || tl.contains('cab')) {
+        cat = 'Transport';
+      } else if (tl.contains('medicine') || tl.contains('doctor') || tl.contains('hospital')) {
+        cat = 'Health';
+      } else if (tl.contains('shop') || tl.contains('cloth') || tl.contains('amazon') || tl.contains('flipkart')) {
+        cat = 'Shopping';
+      }
 
       final title = _titleCase(titleRaw);
 
@@ -1130,7 +1149,6 @@ class AIService {
       } else {
         // Multiple items — return first item action, mention all in reply
         final names = items.map((i) => _titleCase(i.replaceAll(RegExp(r'^(some|a|an|the)\s+', caseSensitive: false), '').trim())).toList();
-        final parsed = _parseGroceryItem(items[0]);
         String reply = 'Added ${names.length} items to your grocery list: **${names.join(', ')}** 🛒';
         return AIResult(
           reply: reply,
@@ -1251,8 +1269,11 @@ class AIService {
       DateTime due = DateTime.now();
       if (time == 'tomorrow') {
         due = due.add(const Duration(days: 1));
-      } else if (time == 'next week') due = due.add(const Duration(days: 7));
-      else if (time == 'this week') due = due.add(const Duration(days: 4));
+      } else if (time == 'next week') {
+        due = due.add(const Duration(days: 7));
+      } else if (time == 'this week') {
+        due = due.add(const Duration(days: 4));
+      }
       else if (time.startsWith('in ')) {
         final d = RegExp(r'\d+').firstMatch(time);
         if (d != null) due = due.add(Duration(days: int.tryParse(d.group(0)!) ?? 0));
@@ -1261,8 +1282,11 @@ class AIService {
       String cat = 'General';
       if (rl.contains('ac') || rl.contains('hvac')) {
         cat = 'HVAC';
-      } else if (rl.contains('water') || rl.contains('plumb') || rl.contains('tank')) cat = 'Water';
-      else if (rl.contains('electr')) cat = 'Electrical';
+      } else if (rl.contains('water') || rl.contains('plumb') || rl.contains('tank')) {
+        cat = 'Water';
+      } else if (rl.contains('electr')) {
+        cat = 'Electrical';
+      }
 
       final title = _titleCase(raw);
       return AIResult(
@@ -1318,11 +1342,17 @@ class AIService {
       final nl = nameRaw.toLowerCase();
       if (nl.contains('plumb')) {
         cat = 'Plumber';
-      } else if (nl.contains('electr')) cat = 'Electrician';
-      else if (nl.contains('doctor') || nl.contains('dr')) cat = 'Hospital';
-      else if (nl.contains('hospital')) cat = 'Hospital';
-      else if (nl.contains('fire')) cat = 'Emergency';
-      else if (nl.contains('police')) cat = 'Emergency';
+      } else if (nl.contains('electr')) {
+        cat = 'Electrician';
+      } else if (nl.contains('doctor') || nl.contains('dr')) {
+        cat = 'Hospital';
+      } else if (nl.contains('hospital')) {
+        cat = 'Hospital';
+      } else if (nl.contains('fire')) {
+        cat = 'Emergency';
+      } else if (nl.contains('police')) {
+        cat = 'Emergency';
+      }
 
       final name = _titleCase(nameRaw);
       return AIResult(
@@ -1587,8 +1617,11 @@ class AIService {
     String status;
     if (overall >= 80) {
       status = 'Your home is in great shape! 🏠✨';
-    } else if (overall >= 60) status = 'Mostly good, a few areas need attention.';
-    else status = 'Some things need your attention soon.';
+    } else if (overall >= 60) {
+      status = 'Mostly good, a few areas need attention.';
+    } else {
+      status = 'Some things need your attention soon.';
+    }
 
     return '$status\n\n'
         '🏠 Overall: **$overall/100**\n'
@@ -1715,7 +1748,9 @@ class AIService {
     }
     if (totalDebt == 0) {
       healthScore += 20;
-    } else if (totalDebt < monthlyIncome * 3) healthScore += 10;
+    } else if (totalDebt < monthlyIncome * 3) {
+      healthScore += 10;
+    }
     if (totalSaved > monthlyIncome * 3) healthScore += 10;
     healthScore = healthScore.clamp(0, 100);
 

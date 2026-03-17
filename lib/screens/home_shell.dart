@@ -7,7 +7,6 @@ import 'dashboard_screen.dart';
 import 'tasks_screen.dart';
 import 'grocery_screen.dart';
 import 'finance_screen.dart';
-import 'more_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'family_chat_screen.dart';
 import 'package:flutter_animate/flutter_animate.dart';

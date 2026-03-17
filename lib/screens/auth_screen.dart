@@ -530,7 +530,9 @@ class _AuthScreenState extends State<AuthScreen>
                 await context
                     .read<AppState>()
                     .resetPassword(resetEmailCtrl.text.trim());
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Password reset email sent!'),
@@ -538,7 +540,9 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                 );
               } catch (e) {
+                if (!ctx.mounted) return;
                 Navigator.pop(ctx);
+                if (!mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Could not send reset email.'),
