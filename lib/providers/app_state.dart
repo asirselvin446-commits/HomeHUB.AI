@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:uuid/uuid.dart';
 import '../models/models.dart';
 import '../services/firebase_service.dart';
@@ -179,7 +180,20 @@ class AppState extends ChangeNotifier {
       _subscribeToStreams();
     }
 
-
+    // Register for FCM Token
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        await _firebase.updateUserToken(_firebaseUser!.uid, token);
+      }
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) {
+        if (_firebaseUser != null) {
+          _firebase.updateUserToken(_firebaseUser!.uid, newToken);
+        }
+      });
+    } catch (e) {
+      debugPrint('Error getting FCM token: $e');
+    }
 
     _isLoadingProfile = false;
     notifyListeners();

@@ -103,6 +103,7 @@ class FirebaseService {
     String role = 'Member',
     String avatar = '👤',
     bool? isAdmin,
+    String? fcmToken,
   }) async {
     final data = <String, dynamic>{
       'name': name,
@@ -116,7 +117,15 @@ class FirebaseService {
     if (isAdmin != null) {
       data['isAdmin'] = isAdmin;
     }
+    if (fcmToken != null) {
+      data['fcmToken'] = fcmToken;
+    }
     await _db.collection('users').doc(uid).set(data, SetOptions(merge: true));
+  }
+
+  // Update user FCM token
+  Future<void> updateUserToken(String uid, String token) async {
+    await _db.collection('users').doc(uid).update({'fcmToken': token});
   }
 
   // Get user profile
