@@ -5,7 +5,6 @@ import '../providers/app_state.dart';
 import '../theme/colors.dart';
 import '../theme/spacing.dart';
 import '../widgets/app_card.dart';
-import '../widgets/common_widgets.dart';
 import 'tasks_screen.dart';
 import 'finance_screen.dart';
 import 'grocery_screen.dart';
@@ -128,9 +127,10 @@ class DashboardScreen extends StatelessWidget {
                       _quickAction(context, Icons.shopping_cart_rounded, 'Grocery',
                           AppColors.info, () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const GroceryScreen()))),
-                      _quickAction(context, Icons.account_balance_wallet_rounded, 'Finance',
-                          AppColors.accent, () => Navigator.push(context,
-                            MaterialPageRoute(builder: (_) => const FinanceScreen()))),
+                      if (state.canViewFinance)
+                        _quickAction(context, Icons.account_balance_wallet_rounded, 'Finance',
+                            AppColors.accent, () => Navigator.push(context,
+                              MaterialPageRoute(builder: (_) => const FinanceScreen()))),
                       _quickAction(context, Icons.build_rounded, 'Maintain',
                           const Color(0xFF8B5CF6), () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) => const MaintenanceScreen()))),
@@ -157,9 +157,10 @@ class DashboardScreen extends StatelessWidget {
                           '${state.pendingTasks.length}', Icons.task_alt_rounded,
                           AppColors.primary,
                           subtitle: '${state.householdTasks.where((t) => t.isOverdue).length} overdue'),
-                      _statCard(context, 'This Month',
-                          currencyFormat.format(state.thisMonthExpenseTotal),
-                          Icons.account_balance_wallet_rounded, AppColors.accent),
+                      if (state.canViewFinance)
+                        _statCard(context, 'This Month',
+                            currencyFormat.format(state.thisMonthExpenseTotal),
+                            Icons.account_balance_wallet_rounded, AppColors.accent),
                       _statCard(context, 'Groceries',
                           '${state.unpurchasedGroceries.length}',
                           Icons.shopping_cart_rounded, AppColors.info,
@@ -181,7 +182,7 @@ class DashboardScreen extends StatelessWidget {
                     )),
                     const SizedBox(height: 12),
                     AppCard(
-                      borderColor: AppColors.primary.withOpacity(0.2),
+                      borderColor: AppColors.primary.withValues(alpha: 0.2),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -264,7 +265,7 @@ class DashboardScreen extends StatelessWidget {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primary.withOpacity(0.1),
+                                  color: AppColors.primary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(task.assignedTo!, style: TextStyle(
@@ -301,7 +302,7 @@ class DashboardScreen extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: AppColors.card(context),
                               borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
-                              border: Border.all(color: color.withOpacity(0.25)),
+                              border: Border.all(color: color.withValues(alpha: 0.25)),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,7 +387,7 @@ class DashboardScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.radiusXl),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.25),
+            color: AppColors.primary.withValues(alpha: 0.25),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -458,7 +459,7 @@ class DashboardScreen extends StatelessWidget {
           border: Border.all(
             color: AppColors.isDark(context)
                 ? AppColors.darkBorder
-                : Colors.black.withOpacity(0.04),
+                : Colors.black.withValues(alpha: 0.04),
           ),
         ),
         child: Column(
@@ -467,7 +468,7 @@ class DashboardScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               ),
               child: Icon(icon, color: color, size: 22),
@@ -494,7 +495,7 @@ class DashboardScreen extends StatelessWidget {
         border: Border.all(
           color: AppColors.isDark(context)
               ? AppColors.darkBorder
-              : Colors.black.withOpacity(0.04),
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -506,7 +507,7 @@ class DashboardScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(icon, color: color, size: 16),

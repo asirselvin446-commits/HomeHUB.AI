@@ -32,7 +32,7 @@ class QuickActionTile extends StatelessWidget {
           border: Border.all(
             color: AppColors.isDark(context)
                 ? AppColors.darkBorder
-                : Colors.black.withOpacity(0.04),
+                : Colors.black.withValues(alpha: 0.04),
           ),
         ),
         child: Column(
@@ -41,7 +41,7 @@ class QuickActionTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
               ),
               child: Icon(icon, color: color, size: 22),

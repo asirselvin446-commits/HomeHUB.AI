@@ -1,4 +1,6 @@
 const { onDocumentCreated, onDocumentUpdated } = require("firebase-functions/v2/firestore");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -51,6 +53,8 @@ exports.onFamilyChatMessageCreated = onDocumentCreated(
     }
   }
 );
+
+
 
 // ═══════════════════════════════════════════════════════════
 // TASK ASSIGNMENT NOTIFICATION
@@ -289,60 +293,166 @@ function _logFailures(response) {
   }
 }
 
+const { onDocumentWritten } = require("firebase-functions/v2/firestore");
+
 // ═════════════════════════════════════════════════════
-//  AI SMART: Overdue Bill Notification
+//  NEW BILL NOTIFICATION
 // ═════════════════════════════════════════════════════
 
-/**
- * When a utility bill is created or updated, if it's unpaid and overdue,
- * notify all household members with an AI-triggered smart alert.
- */
-exports.onBillOverdueCheck = functions.firestore
-  .document("households/{householdId}/utilityBills/{billId}")
-  .onWrite(async (change, context) => {
-    const { householdId } = context.params;
-    const data = change.after.exists ? change.after.data() : null;
+exports.onNewBillCreated = onDocumentCreated(
+  "households/{householdId}/utilityBills/{billId}",
+  async (event) => {
+    const snapshot = event.data;
+    if (!snapshot) return;
 
-    if (!data) return; // Bill was deleted
+    const bill = snapshot.data();
+    const householdId = event.params.householdId;
+    const billType = bill.type || "Bill";
+    const amount = bill.amount || 0;
 
+    console.log(`New ${billType} bill ₹${amount} in ${householdId}`);
+
+    try {
+      const tokens = await _getOtherMemberTokens(householdId, "__none__");
+      if (tokens.length === 0) return;
+
+      const dueInfo = bill.dueDate
+        ? ` — Due ${new Date(bill.dueDate).toLocaleDateString()}`
+        : "";
+
+      const payload = {
+        notification: {
+          title: `💰 New ${billType} Bill Added`,
+          body: `₹${amount.toLocaleString()}${dueInfo}`,
+        },
+        data: {
+          type: "bill_added",
+          householdId: householdId,
+          billId: event.params.billId,
+        },
+        tokens: tokens,
+      };
+
+      const response = await admin.messaging().sendEachForMulticast(payload);
+      console.log(
+        `Bill: ${response.successCount} sent, ${response.failureCount} failed`
+      );
+      _logFailures(response);
+    } catch (error) {
+      console.error("Error sending bill notification:", error);
+    }
+  }
+);
+
+// ═════════════════════════════════════════════════════
+//  OVERDUE BILL SMART ALERT (v2 API)
+// ═════════════════════════════════════════════════════
+
+exports.onBillOverdueCheck = onDocumentWritten(
+  "households/{householdId}/utilityBills/{billId}",
+  async (event) => {
+    const householdId = event.params.householdId;
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return; // Bill was deleted
+
+    const data = afterSnap.data();
     const isPaid = data.isPaid || false;
-    if (isPaid) return; // Bill is paid, no alert needed
+    if (isPaid) return;
 
-    const dueDate = data.dueDate ? data.dueDate.toDate() : null;
-    if (!dueDate) return;
+    // Parse dueDate — could be a Firestore Timestamp or ISO string
+    let dueDate;
+    if (data.dueDate && data.dueDate.toDate) {
+      dueDate = data.dueDate.toDate();
+    } else if (data.dueDate) {
+      dueDate = new Date(data.dueDate);
+    } else {
+      return;
+    }
 
     const now = new Date();
     const diffDays = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 1) return; // Not overdue yet
+    if (diffDays < 1) return;
 
     const billType = data.type || "Bill";
     const amount = data.amount || 0;
 
-    // Get all member tokens for this household
-    const tokens = await _getOtherMemberTokens(householdId, "__none__");
+    try {
+      const tokens = await _getOtherMemberTokens(householdId, "__none__");
+      if (tokens.length === 0) return;
 
-    if (tokens.length === 0) return;
+      const response = await admin.messaging().sendEachForMulticast({
+        tokens: tokens,
+        notification: {
+          title: `🚨 Overdue: ${billType} Bill`,
+          body: `₹${amount} was due ${diffDays} day${diffDays > 1 ? "s" : ""} ago. Pay it now to avoid penalties.`,
+        },
+        data: {
+          type: "ai_smart_bill",
+          householdId: householdId,
+        },
+      });
 
-    const payload = {
-      notification: {
-        title: `🚨 Overdue: ${billType} Bill`,
-        body: `₹${amount} was due ${diffDays} day${diffDays > 1 ? "s" : ""} ago. Pay it now to avoid penalties.`,
-      },
-      data: {
-        type: "ai_smart_bill",
-        householdId: householdId,
-      },
-    };
+      console.log(
+        `Overdue bill alert: ${response.successCount} sent, ${response.failureCount} failed`
+      );
+      _logFailures(response);
+    } catch (error) {
+      console.error("Error sending overdue bill notification:", error);
+    }
+  }
+);
 
-    const response = await admin.messaging().sendEachForMulticast({
-      tokens: tokens,
-      notification: payload.notification,
-      data: payload.data,
-    });
+// ═════════════════════════════════════════════════════
+//  MAINTENANCE OVERDUE ALERT
+// ═════════════════════════════════════════════════════
 
-    console.log(
-      `Overdue bill alert: ${response.successCount} sent, ${response.failureCount} failed`
-    );
-    _logFailures(response);
-  });
+exports.onMaintenanceOverdue = onDocumentWritten(
+  "households/{householdId}/maintenanceTasks/{taskId}",
+  async (event) => {
+    const afterSnap = event.data.after;
+    if (!afterSnap.exists) return;
+
+    const data = afterSnap.data();
+    if (data.isCompleted) return;
+
+    let nextDue;
+    if (data.nextDue && data.nextDue.toDate) {
+      nextDue = data.nextDue.toDate();
+    } else if (data.nextDue) {
+      nextDue = new Date(data.nextDue);
+    } else {
+      return;
+    }
+
+    const now = new Date();
+    const diffDays = Math.floor((now - nextDue) / (1000 * 60 * 60 * 24));
+    if (diffDays < 1) return;
+
+    const householdId = event.params.householdId;
+    const taskName = data.name || "Maintenance";
+
+    try {
+      const tokens = await _getOtherMemberTokens(householdId, "__none__");
+      if (tokens.length === 0) return;
+
+      const response = await admin.messaging().sendEachForMulticast({
+        tokens: tokens,
+        notification: {
+          title: `🔧 Maintenance Overdue: ${taskName}`,
+          body: `Service was due ${diffDays} day${diffDays > 1 ? "s" : ""} ago. Schedule it soon!`,
+        },
+        data: {
+          type: "maintenance_overdue",
+          householdId: householdId,
+        },
+      });
+
+      console.log(
+        `Maintenance overdue: ${response.successCount} sent, ${response.failureCount} failed`
+      );
+      _logFailures(response);
+    } catch (error) {
+      console.error("Error sending maintenance notification:", error);
+    }
+  }
+);

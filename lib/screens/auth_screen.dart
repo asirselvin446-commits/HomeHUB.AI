@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -118,8 +116,20 @@ class _AuthScreenState extends State<AuthScreen>
     if (error.contains('weak-password')) return 'Password should be at least 6 characters.';
     if (error.contains('invalid-email')) return 'Please enter a valid email address.';
     if (error.contains('network')) return 'Network error. Please check your connection.';
-    
-    // Return the actual raw error so we can debug it
+    // Google Sign-In — check configuration errors first (code 10 = DEVELOPER_ERROR, usually SHA-1)
+    if (error.contains('DEVELOPER_ERROR') ||
+        error.contains('ApiException: 10') ||
+        error.contains(': 10:') ||
+        error.contains(' 10 ')) {
+      return 'Google Sign-In needs setup: add your app\'s SHA-1 in Firebase Console (Project settings → Your apps → Android).';
+    }
+    if (error.contains('id token') || error.contains('ID token')) {
+      return 'Google Sign-In configuration issue. Please try again or use email sign-in.';
+    }
+    if (error.contains('sign_in_failed') || error.contains('SignInFailedException')) {
+      return 'Google Sign-In failed. Check your internet connection and try again.';
+    }
+
     return 'Error: $error';
   }
 
@@ -158,7 +168,7 @@ class _AuthScreenState extends State<AuthScreen>
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
+                              color: AppColors.primary.withValues(alpha: 0.4),
                               blurRadius: 30,
                               offset: Offset(0, 10),
                             ),
@@ -195,10 +205,10 @@ class _AuthScreenState extends State<AuthScreen>
                           width: double.infinity,
                           padding: EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.error.withOpacity(0.15),
+                            color: AppColors.error.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: AppColors.error.withOpacity(0.3)),
+                                color: AppColors.error.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
@@ -346,12 +356,12 @@ class _AuthScreenState extends State<AuthScreen>
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
-                                AppColors.primary.withOpacity(0.5),
+                                AppColors.primary.withValues(alpha: 0.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                             elevation: 8,
-                            shadowColor: AppColors.primary.withOpacity(0.5),
+                            shadowColor: AppColors.primary.withValues(alpha: 0.5),
                           ),
                           child: _isLoading
                               ? SizedBox(
@@ -380,7 +390,7 @@ class _AuthScreenState extends State<AuthScreen>
                           Expanded(
                               child: Divider(
                                   color: AppColors.darkTextSecondary
-                                      .withOpacity(0.3))),
+                                      .withValues(alpha: 0.3))),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
@@ -394,7 +404,7 @@ class _AuthScreenState extends State<AuthScreen>
                           Expanded(
                               child: Divider(
                                   color: AppColors.darkTextSecondary
-                                      .withOpacity(0.3))),
+                                      .withValues(alpha: 0.3))),
                         ],
                       ),
 
@@ -409,7 +419,7 @@ class _AuthScreenState extends State<AuthScreen>
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
                                 color: AppColors.darkTextSecondary
-                                    .withOpacity(0.3)),
+                                    .withValues(alpha: 0.3)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),

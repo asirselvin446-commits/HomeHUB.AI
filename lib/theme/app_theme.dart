@@ -98,7 +98,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.darkCardAlt,
-        selectedColor: AppColors.primary.withOpacity(0.2),
+        selectedColor: AppColors.primary.withValues(alpha: 0.2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
@@ -190,7 +190,7 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.lightSurfaceAlt,
-        selectedColor: AppColors.primary.withOpacity(0.12),
+        selectedColor: AppColors.primary.withValues(alpha: 0.12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),

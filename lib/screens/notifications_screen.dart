@@ -142,8 +142,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               horizontal: 5, vertical: 1),
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.white.withOpacity(0.3)
-                                : AppColors.primary.withOpacity(0.15),
+                                ? Colors.white.withValues(alpha: 0.3)
+                                : AppColors.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -200,7 +200,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               : Icons.filter_list_off_rounded,
                           size: 64,
                           color: AppColors.textSecondary(context)
-                              .withOpacity(0.3),
+                              .withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -216,7 +216,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           'You\'re all caught up! ✨',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary(context)
-                                .withOpacity(0.6),
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -233,7 +233,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         background: Container(
                           alignment: Alignment.centerRight,
                           padding: const EdgeInsets.only(right: 20),
-                          color: Colors.red.withOpacity(0.1),
+                          color: Colors.red.withValues(alpha: 0.1),
                           child: Icon(Icons.delete_outline_rounded,
                               color: Colors.red.shade400),
                         ),
@@ -256,13 +256,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             decoration: BoxDecoration(
                               color: notification.isRead
                                   ? Colors.transparent
-                                  : AppColors.primary.withOpacity(0.04),
+                                  : AppColors.primary.withValues(alpha: 0.04),
                               border: Border(
                                 bottom: BorderSide(
                                   color: (isDark
                                           ? Colors.white
                                           : Colors.black)
-                                      .withOpacity(0.05),
+                                      .withValues(alpha: 0.05),
                                 ),
                               ),
                             ),
@@ -279,7 +279,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             ? AppColors.darkCardAlt
                                             : Colors.grey.shade100)
                                         : _getColorForType(notification.type)
-                                            .withOpacity(0.15),
+                                            .withValues(alpha: 0.15),
                                     borderRadius:
                                         BorderRadius.circular(12),
                                   ),
@@ -348,7 +348,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                           color:
                                               AppColors.textSecondary(
                                                       context)
-                                                  .withOpacity(0.7),
+                                                  .withValues(alpha: 0.7),
                                         ),
                                       ),
                                     ],
@@ -394,6 +394,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   void _navigateToRoute(BuildContext context, String? route) {
     if (route == null) return;
+
+    // Block finance navigation for unauthorized roles
+    if (route == 'finance') {
+      final appState = context.read<AppState>();
+      if (!appState.canViewFinance) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.lock_outline_rounded, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Text('Only parents & admins can access finances'),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.primary,
+            duration: Duration(seconds: 2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+        return;
+      }
+    }
 
     Widget? screen;
     switch (route) {

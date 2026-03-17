@@ -37,7 +37,7 @@ class MaintenanceTask {
       !isCompleted;
 
   int? get daysUntilDue =>
-      nextDue != null ? nextDue!.difference(DateTime.now()).inDays : null;
+      nextDue?.difference(DateTime.now()).inDays;
 
   Map<String, dynamic> toJson() => {
         'id': id,

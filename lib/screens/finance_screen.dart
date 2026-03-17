@@ -73,16 +73,61 @@ class _FinanceScreenState extends State<FinanceScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final appState = context.watch<AppState>();
+
+    // Fallback guard: block access for unauthorized roles
+    if (!appState.canViewFinance) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Finance')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(40),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Icon(Icons.lock_rounded, size: 40, color: AppColors.primary),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'Access Restricted',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: isDark ? AppColors.darkText : AppColors.lightText,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Only parents and admins can view financial information.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Finance'),
+        title: const Text('Finance'),
       ),
       body: Column(
         children: [
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
                 _tabChip('Expenses', 0, isDark),
@@ -96,10 +141,10 @@ class _FinanceScreenState extends State<FinanceScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-          _ExpensesTab(currencyFormat: currencyFormat),
-          _DebtsTab(currencyFormat: currencyFormat),
-          _SavingsTab(currencyFormat: currencyFormat),
-          _BillsTab(currencyFormat: currencyFormat),
+                _ExpensesTab(currencyFormat: currencyFormat),
+                _DebtsTab(currencyFormat: currencyFormat),
+                _SavingsTab(currencyFormat: currencyFormat),
+                _BillsTab(currencyFormat: currencyFormat),
               ],
             ),
           ),
@@ -576,17 +621,19 @@ class _ExpensesTab extends StatelessWidget {
                   onPressed: () {
                     if (titleCtrl.text.isNotEmpty &&
                         amountCtrl.text.isNotEmpty) {
+                      final appState = context.read<AppState>();
                       final newExpense = Expense(
                         id: expense?.id ?? '',
                         title: titleCtrl.text,
                         amount: double.tryParse(amountCtrl.text) ?? 0,
                         category: category,
                         date: expense?.date ?? DateTime.now(),
+                        paidBy: expense?.paidBy ?? appState.currentUserId,
                       );
                       if (expense == null) {
-                        context.read<AppState>().addExpense(newExpense);
+                        appState.addExpense(newExpense);
                       } else {
-                        context.read<AppState>().updateExpense(newExpense);
+                        appState.updateExpense(newExpense);
                       }
                       Navigator.pop(ctx);
                     }

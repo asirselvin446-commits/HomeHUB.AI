@@ -1,14 +1,20 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/models.dart';
+
+/// Web client ID (OAuth 2.0) for Google Sign-In so Firebase Auth can verify the id token.
+/// From Firebase Console → Authentication → Sign-in method → Google → Web SDK config.
+const String _kGoogleSignInWebClientId =
+    '50353404265-2aa9g24u220u5i5pmbt64gjtj4sq13na.apps.googleusercontent.com';
 
 class FirebaseService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _db = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
-  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: _kGoogleSignInWebClientId,
+  );
 
   // ============ AUTH ============
 
@@ -42,15 +48,28 @@ class FirebaseService {
 
   // Google Sign In
   Future<UserCredential?> signInWithGoogle() async {
+    // Clear any cached sign-in so we get a fresh token (avoids stale-state failures).
+    await _googleSignIn.signOut();
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
     if (googleUser == null) return null;
 
     final GoogleSignInAuthentication googleAuth =
         await googleUser.authentication;
 
+    // Firebase Auth requires idToken when using GoogleAuthProvider.credential.
+    // serverClientId on GoogleSignIn ensures idToken is present.
+    final idToken = googleAuth.idToken;
+    final accessToken = googleAuth.accessToken;
+    if (idToken == null) {
+      throw Exception(
+        'Google Sign-In could not get an ID token. '
+        'Ensure the Web client ID is set and Google Sign-In is enabled in Firebase Console.',
+      );
+    }
+
     final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
+      accessToken: accessToken,
+      idToken: idToken,
     );
 
     return await _auth.signInWithCredential(credential);
@@ -67,19 +86,10 @@ class FirebaseService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  // ============ PUSH NOTIFICATIONS (FCM) ============
 
-  Future<void> requestNotificationPermissions() async {
-    await _fcm.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
-  }
 
-  Future<String?> getFCMToken() async {
-    return await _fcm.getToken();
-  }
+
+
 
   // ============ USER PROFILE ============
 
@@ -94,13 +104,6 @@ class FirebaseService {
     String avatar = '👤',
     bool? isAdmin,
   }) async {
-    String? fcmToken;
-    try {
-      fcmToken = await getFCMToken();
-    } catch (e) {
-      // Ignore if FCM is largely unavailable (e.g. some emulators)
-    }
-
     final data = <String, dynamic>{
       'name': name,
       'nickname': nickname,
@@ -112,9 +115,6 @@ class FirebaseService {
     };
     if (isAdmin != null) {
       data['isAdmin'] = isAdmin;
-    }
-    if (fcmToken != null) {
-      data['fcmToken'] = fcmToken;
     }
     await _db.collection('users').doc(uid).set(data, SetOptions(merge: true));
   }

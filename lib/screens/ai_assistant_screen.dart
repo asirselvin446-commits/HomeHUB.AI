@@ -5,7 +5,6 @@ import '../services/ai_service.dart';
 import '../models/models.dart';
 
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
 
@@ -233,7 +232,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 28,
                   offset: const Offset(0, 10),
                 ),
@@ -277,6 +276,14 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
             ),
           ),
+          const SizedBox(height: 6),
+          Text(
+            'You can use long sentences — I\'ll understand the full message.',
+            style: TextStyle(
+              fontSize: 11,
+              color: isDark ? AppColors.darkTextSecondary.withValues(alpha: 0.8) : AppColors.lightTextSecondary.withValues(alpha: 0.8),
+            ),
+          ),
         ],
       ),
     );
@@ -288,7 +295,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
@@ -327,7 +334,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
               decoration: BoxDecoration(
                 color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -358,7 +365,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
         color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, -4),
           ),
@@ -411,7 +418,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
                     ? []
                     : [
                         BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
+                          color: AppColors.primary.withValues(alpha: 0.4),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
@@ -445,7 +452,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             bottomLeft: Radius.circular(4),
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -483,7 +490,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
             bottomRight: isUser ? const Radius.circular(4) : const Radius.circular(16),
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -576,9 +583,9 @@ class _AIAssistantScreenState extends State<AIAssistantScreen>
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -683,7 +690,7 @@ class _TypingDotsState extends State<_TypingDots> with TickerProviderStateMixin 
               height: 7,
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.7),
+                color: AppColors.primary.withValues(alpha: 0.7),
                 shape: BoxShape.circle,
               ),
             ),

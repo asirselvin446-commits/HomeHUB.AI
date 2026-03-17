@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -104,7 +102,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   Container(
                     padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.15),
+                      color: AppColors.error.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(_errorMessage!,
@@ -119,7 +117,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(color: AppColors.primary, width: 2),
                     ),
@@ -143,7 +141,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   style: TextStyle(color: Colors.white),
                   decoration: InputDecoration(
                     hintText: 'e.g. Papa, Junior, etc.',
-                    hintStyle: TextStyle(color: AppColors.darkTextSecondary.withOpacity(0.5)),
+                    hintStyle: TextStyle(color: AppColors.darkTextSecondary.withValues(alpha: 0.5)),
                     prefixIcon: Icon(Icons.face_rounded, color: AppColors.primary),
                   ),
                 ),
@@ -205,7 +203,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 8,
-                      shadowColor: AppColors.primary.withOpacity(0.4),
+                      shadowColor: AppColors.primary.withValues(alpha: 0.4),
                     ),
                     child: _isLoading
                         ? CircularProgressIndicator(color: Colors.white)

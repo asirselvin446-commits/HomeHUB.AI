@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import 'family_screen.dart';
 import 'emergency_screen.dart';
 import 'ai_assistant_screen.dart';
 import 'history_screen.dart';
 import 'feedback_screen.dart';
+
 
 import 'notification_preferences_screen.dart';
 
@@ -34,7 +33,7 @@ class MoreScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.3),
+                  color: AppColors.primary.withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: Offset(0, 8),
                 ),
@@ -44,7 +43,7 @@ class MoreScreen extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 28,
-                  backgroundColor: Colors.white.withOpacity(0.2),
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
                   child: Text('👑', style: TextStyle(fontSize: 28)),
                 ),
                 SizedBox(width: 16),
@@ -85,7 +84,7 @@ class MoreScreen extends StatelessWidget {
                 color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                    color: AppColors.primary.withOpacity(0.3)),
+                    color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,6 +197,7 @@ class MoreScreen extends StatelessWidget {
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => HistoryScreen())),
             ),
+
           ], isDark),
 
           SizedBox(height: 16),
@@ -214,7 +214,7 @@ class MoreScreen extends StatelessWidget {
               trailing: Switch(
                 value: isDark,
                 onChanged: (_) => state.toggleTheme(),
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
               ),
             ),
             _MenuItem(
@@ -252,7 +252,7 @@ class MoreScreen extends StatelessWidget {
                   applicationIcon: Container(
                     padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.home_rounded, size: 40, color: AppColors.primary),
@@ -317,8 +317,8 @@ class MoreScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
-                        ? AppColors.darkTextSecondary.withOpacity(0.5)
-                        : AppColors.lightTextSecondary.withOpacity(0.5),
+                        ? AppColors.darkTextSecondary.withValues(alpha: 0.5)
+                        : AppColors.lightTextSecondary.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -364,7 +364,7 @@ class MoreScreen extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: item.color.withOpacity(0.15),
+                        color: item.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(item.icon, color: item.color, size: 20),
@@ -399,8 +399,8 @@ class MoreScreen extends StatelessWidget {
                       height: 1,
                       indent: 72,
                       color: isDark
-                          ? Colors.white.withOpacity(0.05)
-                          : Colors.black.withOpacity(0.05),
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.05),
                     ),
                 ],
               );

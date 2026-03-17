@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 
 class FamilyChatScreen extends StatefulWidget {
   const FamilyChatScreen({super.key});
@@ -63,7 +62,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.15),
+                color: AppColors.primary.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(Icons.forum_rounded, color: AppColors.primary, size: 18),
@@ -104,7 +103,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
                         Icon(
                           Icons.forum_outlined,
                           size: 64,
-                          color: AppColors.primary.withOpacity(0.3),
+                          color: AppColors.primary.withValues(alpha: 0.3),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -122,8 +121,8 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
                           'Say hi to your family!',
                           style: TextStyle(
                             color: isDark
-                                ? AppColors.darkTextSecondary.withOpacity(0.7)
-                                : AppColors.lightTextSecondary.withOpacity(0.7),
+                                ? AppColors.darkTextSecondary.withValues(alpha: 0.7)
+                                : AppColors.lightTextSecondary.withValues(alpha: 0.7),
                           ),
                         ),
                       ],
@@ -211,7 +210,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: AppColors.primary.withValues(alpha: 0.3),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -254,7 +253,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
             if (showAvatar)
               CircleAvatar(
                 radius: 14,
-                backgroundColor: AppColors.primary.withOpacity(0.1),
+                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Text(msg.senderAvatar, style: const TextStyle(fontSize: 14)),
               )
             else
@@ -301,7 +300,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
                           ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -326,7 +325,7 @@ class _FamilyChatScreenState extends State<FamilyChatScreen> {
                         style: TextStyle(
                           fontSize: 10,
                           color: isMe
-                              ? Colors.white.withOpacity(0.7)
+                              ? Colors.white.withValues(alpha: 0.7)
                               : (isDark
                                   ? AppColors.darkTextSecondary
                                   : AppColors.lightTextSecondary),

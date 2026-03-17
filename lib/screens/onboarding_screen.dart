@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 
 class HouseholdSetupScreen extends StatefulWidget {
   const HouseholdSetupScreen({super.key});
@@ -154,7 +152,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.4),
+                color: AppColors.primary.withValues(alpha: 0.4),
                 blurRadius: 30,
                 offset: Offset(0, 10),
               ),
@@ -234,7 +232,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
+              color: gradient.colors.first.withValues(alpha: 0.3),
               blurRadius: 16,
               offset: Offset(0, 6),
             ),
@@ -309,7 +307,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.15),
+              color: AppColors.error.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(_errorMessage!,
@@ -357,7 +355,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               elevation: 8,
-              shadowColor: AppColors.primary.withOpacity(0.5),
+              shadowColor: AppColors.primary.withValues(alpha: 0.5),
             ),
             child: _isLoading
                 ? SizedBox(
@@ -415,7 +413,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.15),
+              color: AppColors.error.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(_errorMessage!,
@@ -446,7 +444,7 @@ class _HouseholdSetupScreenState extends State<HouseholdSetupScreen>
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16)),
               elevation: 8,
-              shadowColor: AppColors.primary.withOpacity(0.5),
+              shadowColor: AppColors.primary.withValues(alpha: 0.5),
             ),
             child: _isLoading
                 ? SizedBox(

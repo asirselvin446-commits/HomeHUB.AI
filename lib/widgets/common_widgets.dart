@@ -8,11 +8,11 @@ class GradientCard extends StatelessWidget {
   final EdgeInsetsGeometry? padding;
 
   const GradientCard({
-    Key? key,
+    super.key,
     required this.gradient,
     required this.child,
     this.padding,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class GradientCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
         boxShadow: [
           BoxShadow(
-            color: gradient.colors.first.withOpacity(0.2),
+            color: gradient.colors.first.withValues(alpha: 0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -43,14 +43,14 @@ class StatCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const StatCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
     this.subtitle,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +62,7 @@ class StatCard extends StatelessWidget {
         border: Border.all(
           color: AppColors.isDark(context)
               ? AppColors.darkBorder
-              : Colors.black.withOpacity(0.04),
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -74,7 +74,7 @@ class StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Icon(icon, color: color, size: 18),
@@ -127,11 +127,11 @@ class EmptyState extends StatelessWidget {
   final String subtitle;
 
   const EmptyState({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.subtitle,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class FamilyScreen extends StatelessWidget {
@@ -105,14 +103,14 @@ class FamilyScreen extends StatelessWidget {
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
         border: isCurrentUser
-            ? Border.all(color: AppColors.primary.withOpacity(0.3), width: 1)
+            ? Border.all(color: AppColors.primary.withValues(alpha: 0.3), width: 1)
             : null,
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppColors.primary.withOpacity(0.2),
+            backgroundColor: AppColors.primary.withValues(alpha: 0.2),
             child: Text(
               member.avatar,
               style: TextStyle(fontSize: 24),
@@ -172,7 +170,7 @@ class FamilyScreen extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   margin: EdgeInsets.only(bottom: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.accent.withOpacity(0.15),
+                    color: AppColors.accent.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Row(
@@ -195,7 +193,7 @@ class FamilyScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: roleColor.withOpacity(0.15),
+                  color: roleColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -375,7 +373,7 @@ class FamilyScreen extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2)))),
+              Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.3), borderRadius: BorderRadius.circular(2)))),
               SizedBox(height: 16),
               Text(member == null ? 'Add Family Member' : 'Edit Family Member',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
@@ -390,7 +388,7 @@ class FamilyScreen extends StatelessWidget {
                             padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: avatar == e
-                                  ? AppColors.primary.withOpacity(0.2)
+                                  ? AppColors.primary.withValues(alpha: 0.2)
                                   : Colors.transparent,
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -405,7 +403,7 @@ class FamilyScreen extends StatelessWidget {
               TextField(controller: emailCtrl, decoration: InputDecoration(hintText: 'Email (optional)')),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: dropdownValue,
+                initialValue: dropdownValue,
                 items: rolesList
                     .map((r) => DropdownMenuItem(value: r, child: Text(r)))
                     .toList(),

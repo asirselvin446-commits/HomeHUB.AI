@@ -136,10 +136,10 @@ class _TasksScreenState extends State<TasksScreen> {
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           border: Border.all(
             color: task.isOverdue
-                ? AppColors.error.withOpacity(0.3)
+                ? AppColors.error.withValues(alpha: 0.3)
                 : isDark
                     ? AppColors.darkBorder
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
           ),
         ),
         child: Padding(
@@ -202,7 +202,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: priorityColor.withOpacity(0.1),
+                            color: priorityColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -244,7 +244,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 const SizedBox(width: 8),
                 CircleAvatar(
                   radius: 14,
-                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                   child: Text(
                     task.assignedTo![0].toUpperCase(),
                     style: TextStyle(
@@ -294,7 +294,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 child: Container(
                   width: 40, height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.textSecondary(context).withOpacity(0.3),
+                    color: AppColors.textSecondary(context).withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -318,7 +318,7 @@ class _TasksScreenState extends State<TasksScreen> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: category,
+                      initialValue: category,
                       decoration: const InputDecoration(hintText: 'Category'),
                       items: [
                         'Cleaning', 'Bills', 'Shopping',
@@ -330,7 +330,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: priority,
+                      initialValue: priority,
                       decoration: const InputDecoration(hintText: 'Priority'),
                       items: ['high', 'medium', 'low']
                           .map((p) => DropdownMenuItem(
@@ -390,7 +390,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: assignedTo,
+                      initialValue: assignedTo,
                       decoration: const InputDecoration(hintText: 'Assign to'),
                       items: [
                         const DropdownMenuItem(value: null, child: Text('Unassigned')),

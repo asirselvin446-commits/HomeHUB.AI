@@ -42,12 +42,12 @@ class _AppCardState extends State<AppCard> {
             : Border.all(
                 color: isDark
                     ? AppColors.darkBorder
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
                 width: 1,
               ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

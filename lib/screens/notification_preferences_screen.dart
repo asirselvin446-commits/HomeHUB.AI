@@ -194,7 +194,7 @@ class NotificationPreferencesScreen extends StatelessWidget {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color, size: 20),
@@ -217,7 +217,7 @@ class NotificationPreferencesScreen extends StatelessWidget {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: AppColors.primary,
+        activeThumbColor: AppColors.primary,
       ),
     );
   }
@@ -227,8 +227,8 @@ class NotificationPreferencesScreen extends StatelessWidget {
       height: 1,
       indent: 72,
       color: isDark
-          ? Colors.white.withOpacity(0.05)
-          : Colors.black.withOpacity(0.05),
+          ? Colors.white.withValues(alpha: 0.05)
+          : Colors.black.withValues(alpha: 0.05),
     );
   }
 }

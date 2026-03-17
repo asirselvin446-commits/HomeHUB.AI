@@ -170,8 +170,9 @@ class AIService {
   }) {
     final hour = DateTime.now().hour;
     String greeting = 'Hello';
-    if (hour < 12) greeting = 'Good morning';
-    else if (hour < 17) greeting = 'Good afternoon';
+    if (hour < 12) {
+      greeting = 'Good morning';
+    } else if (hour < 17) greeting = 'Good afternoon';
     else greeting = 'Good evening';
 
     final pendingTasks = householdTasks.where((t) => !t.isCompleted).toList();
@@ -255,11 +256,11 @@ class AIService {
       final intent = json['intent'] as String? ?? '';
 
       // Extract LLM's smart reply — use it when available
-      String? _lr = json['reply'] as String?;
-      if (_lr != null && (_lr.trim().isEmpty || _lr.contains('[Use LIVE DATA'))) _lr = null;
+      String? lr = json['reply'] as String?;
+      if (lr != null && (lr.trim().isEmpty || lr.contains('[Use LIVE DATA'))) lr = null;
 
       // Helper to prefer LLM reply, fall back to hardcoded
-      String _reply(String fallback) => _lr ?? fallback;
+      String reply(String fallback) => lr ?? fallback;
 
       switch (intent) {
         case 'create_task':
@@ -268,13 +269,14 @@ class AIService {
           final category = json['category'] ?? 'General';
           DateTime? due;
           final dueStr = json['due_date']?.toString().toLowerCase();
-          if (dueStr == 'today') due = DateTime.now();
-          else if (dueStr == 'tomorrow') due = DateTime.now().add(const Duration(days: 1));
+          if (dueStr == 'today') {
+            due = DateTime.now();
+          } else if (dueStr == 'tomorrow') due = DateTime.now().add(const Duration(days: 1));
           else if (dueStr == 'next week') due = DateTime.now().add(const Duration(days: 7));
 
           final dateStr = due != null ? ' for **${DateFormat('MMM dd').format(due)}**' : '';
           return AIResult(
-            reply: _reply('Task added successfully: **$title**$dateStr ✅'),
+            reply: reply('Task added successfully: **$title**$dateStr ✅'),
             action: AIAction(type: 'add_task', data: {
               'title': title,
               'category': category,
@@ -291,7 +293,7 @@ class AIService {
           );
           if (task.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('Task marked as completed: **${task.title}** ✅'),
+              reply: reply('Task marked as completed: **${task.title}** ✅'),
               action: AIAction(type: 'complete_task', data: {'id': task.id}),
             );
           }
@@ -380,7 +382,7 @@ class AIService {
             return AIResult(reply: 'Could not determine the amount. Try "spent 500 on groceries".');
           }
           return AIResult(
-            reply: _reply('Expense recorded: **$title** — ${_cur.format(amount)} 💸'),
+            reply: reply('Expense recorded: **$title** — ${_cur.format(amount)} 💸'),
             action: AIAction(type: 'add_expense', data: {
               'title': title, 'amount': amount, 'category': category,
             }),
@@ -457,8 +459,9 @@ class AIService {
           final amount = (json['amount'] ?? 0).toDouble();
           DateTime dueDate = DateTime.now().add(const Duration(days: 15));
           final dueStr = json['due_date']?.toString().toLowerCase();
-          if (dueStr == 'today') dueDate = DateTime.now();
-          else if (dueStr == 'tomorrow') dueDate = DateTime.now().add(const Duration(days: 1));
+          if (dueStr == 'today') {
+            dueDate = DateTime.now();
+          } else if (dueStr == 'tomorrow') dueDate = DateTime.now().add(const Duration(days: 1));
           else if (dueStr == 'next week') dueDate = DateTime.now().add(const Duration(days: 7));
           else if (dueStr != null && dueStr.contains('day')) {
             final d = RegExp(r'\d+').firstMatch(dueStr);
@@ -690,7 +693,7 @@ class AIService {
         case 'navigate':
           final screen = json['screen'] ?? 'home';
           return AIResult(
-            reply: _reply('Navigating to **${_titleCase(screen)}** 📱'),
+            reply: reply('Navigating to **${_titleCase(screen)}** 📱'),
             action: AIAction(type: 'navigate', data: {'screen': screen}),
           );
 
@@ -703,7 +706,7 @@ class AIService {
           );
           if (task.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('Task **${task.title}** updated 📝'),
+              reply: reply('Task **${task.title}** updated 📝'),
               action: AIAction(type: 'update_task', data: {
                 'id': task.id,
                 'new_title': json['new_title'],
@@ -725,7 +728,7 @@ class AIService {
           );
           if (task.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${task.title}** assigned to **${_titleCase(assignTo)}** 👤'),
+              reply: reply('**${task.title}** assigned to **${_titleCase(assignTo)}** 👤'),
               action: AIAction(type: 'assign_task', data: {
                 'id': task.id,
                 'assign_to': assignTo,
@@ -743,7 +746,7 @@ class AIService {
           );
           if (item.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${item.name}** updated 📝'),
+              reply: reply('**${item.name}** updated 📝'),
               action: AIAction(type: 'update_grocery', data: {
                 'id': item.id,
                 'new_quantity': json['new_quantity'],
@@ -762,7 +765,7 @@ class AIService {
           );
           if (expense.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${expense.title}** expense updated 📝'),
+              reply: reply('**${expense.title}** expense updated 📝'),
               action: AIAction(type: 'update_expense', data: {
                 'id': expense.id,
                 'new_amount': json['new_amount'],
@@ -781,7 +784,7 @@ class AIService {
           );
           if (bill.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${bill.type}** bill updated 📝'),
+              reply: reply('**${bill.type}** bill updated 📝'),
               action: AIAction(type: 'update_bill', data: {
                 'id': bill.id,
                 'new_amount': json['new_amount'],
@@ -800,7 +803,7 @@ class AIService {
           );
           if (debt.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${debt.name}** updated 📝'),
+              reply: reply('**${debt.name}** updated 📝'),
               action: AIAction(type: 'update_debt', data: {
                 'id': debt.id,
                 'new_monthly_payment': json['new_monthly_payment'],
@@ -814,7 +817,7 @@ class AIService {
         case 'update_savings':
           final keyword = (json['goal_name'] ?? '').toString().toLowerCase();
           return AIResult(
-            reply: _reply('**${_titleCase(keyword)}** savings goal updated 📝'),
+            reply: reply('**${_titleCase(keyword)}** savings goal updated 📝'),
             action: AIAction(type: 'update_savings', data: {
               'goalName': keyword,
               'new_target_amount': json['new_target_amount'],
@@ -831,7 +834,7 @@ class AIService {
           );
           if (task.id.isNotEmpty) {
             return AIResult(
-              reply: _reply('**${task.name}** maintenance updated 📝'),
+              reply: reply('**${task.name}** maintenance updated 📝'),
               action: AIAction(type: 'update_maintenance', data: {
                 'id': task.id,
                 'new_due_date': json['new_due_date'],
@@ -845,7 +848,7 @@ class AIService {
         case 'update_emergency_contact':
           final keyword = (json['name'] ?? '').toString().toLowerCase();
           return AIResult(
-            reply: _reply('**${_titleCase(keyword)}** contact updated 📝'),
+            reply: reply('**${_titleCase(keyword)}** contact updated 📝'),
             action: AIAction(type: 'update_emergency_contact', data: {
               'name': keyword,
               'new_phone': json['new_phone'],
@@ -857,7 +860,7 @@ class AIService {
         case 'toggle_notifications':
           final enabled = json['enabled'] ?? true;
           return AIResult(
-            reply: _reply(enabled == true ? 'Notifications enabled 🔔' : 'Notifications disabled 🔕'),
+            reply: reply(enabled == true ? 'Notifications enabled 🔔' : 'Notifications disabled 🔕'),
             action: AIAction(type: 'toggle_notifications', data: {'enabled': enabled}),
           );
 
@@ -868,7 +871,7 @@ class AIService {
             return AIResult(reply: 'What would you like to tell the family?');
           }
           return AIResult(
-            reply: _reply('📨 Message sent to family chat!'),
+            reply: reply('📨 Message sent to family chat!'),
             action: AIAction(type: 'send_family_message', data: {'message': message}),
           );
 
@@ -920,7 +923,9 @@ class AIService {
       final m = p.firstMatch(original);
       if (m == null) continue;
       String raw = m.group(1)?.trim() ?? '';
-      if (raw.isEmpty || raw.length > 100) continue;
+      if (raw.isEmpty) continue;
+      // Allow long phrases; cap only for sanity (e.g. 500 chars for task title)
+      if (raw.length > 500) raw = '${raw.substring(0, 497)}...';
 
       // Parse due date
       DateTime? due;
@@ -948,8 +953,9 @@ class AIService {
       // Category
       String cat = 'General';
       final rl = raw.toLowerCase();
-      if (rl.contains('clean') || rl.contains('mop') || rl.contains('vacuum') || rl.contains('wash')) cat = 'Cleaning';
-      else if (rl.contains('pay') || rl.contains('bill') || rl.contains('bank')) cat = 'Bills';
+      if (rl.contains('clean') || rl.contains('mop') || rl.contains('vacuum') || rl.contains('wash')) {
+        cat = 'Cleaning';
+      } else if (rl.contains('pay') || rl.contains('bill') || rl.contains('bank')) cat = 'Bills';
       else if (rl.contains('buy') || rl.contains('shop') || rl.contains('grocery')) cat = 'Shopping';
       else if (rl.contains('fix') || rl.contains('repair') || rl.contains('service')) cat = 'Maintenance';
       else if (rl.contains('cook') || rl.contains('meal') || rl.contains('food')) cat = 'Cooking';
@@ -1027,7 +1033,9 @@ class AIService {
     // Exclude phone numbers / contacts — numbers with 7+ digits are likely phone numbers
     if (q.contains('number') || q.contains('phone') || q.contains('contact') ||
         q.contains('call') || q.contains('plumber') || q.contains('electrician') ||
-        q.contains('doctor') || q.contains('hospital') || q.contains('emergency')) return null;
+        q.contains('doctor') || q.contains('hospital') || q.contains('emergency')) {
+      return null;
+    }
     if (RegExp(r'\d{7,}').hasMatch(q)) return null; // 7+ digit number = phone, not expense
 
     for (final p in patterns) {
@@ -1057,8 +1065,9 @@ class AIService {
 
       String cat = 'Misc';
       final tl = titleRaw.toLowerCase();
-      if (tl.contains('grocer') || tl.contains('food') || tl.contains('meal') || tl.contains('vegetable')) cat = 'Food';
-      else if (tl.contains('bill') || tl.contains('electric') || tl.contains('water') || tl.contains('rent') || tl.contains('gas')) cat = 'Bills';
+      if (tl.contains('grocer') || tl.contains('food') || tl.contains('meal') || tl.contains('vegetable')) {
+        cat = 'Food';
+      } else if (tl.contains('bill') || tl.contains('electric') || tl.contains('water') || tl.contains('rent') || tl.contains('gas')) cat = 'Bills';
       else if (tl.contains('petrol') || tl.contains('diesel') || tl.contains('travel') || tl.contains('uber') || tl.contains('cab')) cat = 'Transport';
       else if (tl.contains('medicine') || tl.contains('doctor') || tl.contains('hospital')) cat = 'Health';
       else if (tl.contains('shop') || tl.contains('cloth') || tl.contains('amazon') || tl.contains('flipkart')) cat = 'Shopping';
@@ -1099,7 +1108,9 @@ class AIService {
       final m = p.firstMatch(original);
       if (m == null) continue;
       String raw = m.group(1)?.trim() ?? '';
-      if (raw.isEmpty || raw.length > 60) continue;
+      if (raw.isEmpty) continue;
+      // Allow long grocery phrases; cap at 400 chars for sanity
+      if (raw.length > 400) raw = raw.substring(0, 400);
 
       // Multi-item: "milk and eggs" / "milk, eggs, bread"
       List<String> items = [];
@@ -1238,8 +1249,9 @@ class AIService {
       if (!isMaintenance && !q.contains('schedule') && !q.contains('book')) continue;
 
       DateTime due = DateTime.now();
-      if (time == 'tomorrow') due = due.add(const Duration(days: 1));
-      else if (time == 'next week') due = due.add(const Duration(days: 7));
+      if (time == 'tomorrow') {
+        due = due.add(const Duration(days: 1));
+      } else if (time == 'next week') due = due.add(const Duration(days: 7));
       else if (time == 'this week') due = due.add(const Duration(days: 4));
       else if (time.startsWith('in ')) {
         final d = RegExp(r'\d+').firstMatch(time);
@@ -1247,8 +1259,9 @@ class AIService {
       }
 
       String cat = 'General';
-      if (rl.contains('ac') || rl.contains('hvac')) cat = 'HVAC';
-      else if (rl.contains('water') || rl.contains('plumb') || rl.contains('tank')) cat = 'Water';
+      if (rl.contains('ac') || rl.contains('hvac')) {
+        cat = 'HVAC';
+      } else if (rl.contains('water') || rl.contains('plumb') || rl.contains('tank')) cat = 'Water';
       else if (rl.contains('electr')) cat = 'Electrical';
 
       final title = _titleCase(raw);
@@ -1285,7 +1298,9 @@ class AIService {
     if (!q.contains('contact') && !q.contains('number') && !q.contains('phone') &&
         !q.contains('plumber') && !q.contains('electrician') && !q.contains('doctor') &&
         !q.contains('emergency') && !q.contains('hospital') && !q.contains('save') &&
-        !q.contains('call')) return null;
+        !q.contains('call')) {
+      return null;
+    }
 
     for (final p in patterns) {
       final m = p.firstMatch(original);
@@ -1301,8 +1316,9 @@ class AIService {
       // Detect category from keywords
       String cat = 'Emergency';
       final nl = nameRaw.toLowerCase();
-      if (nl.contains('plumb')) cat = 'Plumber';
-      else if (nl.contains('electr')) cat = 'Electrician';
+      if (nl.contains('plumb')) {
+        cat = 'Plumber';
+      } else if (nl.contains('electr')) cat = 'Electrician';
       else if (nl.contains('doctor') || nl.contains('dr')) cat = 'Hospital';
       else if (nl.contains('hospital')) cat = 'Hospital';
       else if (nl.contains('fire')) cat = 'Emergency';
@@ -1569,8 +1585,9 @@ class AIService {
     final overall = scores['overall']!.toInt();
 
     String status;
-    if (overall >= 80) status = 'Your home is in great shape! 🏠✨';
-    else if (overall >= 60) status = 'Mostly good, a few areas need attention.';
+    if (overall >= 80) {
+      status = 'Your home is in great shape! 🏠✨';
+    } else if (overall >= 60) status = 'Mostly good, a few areas need attention.';
     else status = 'Some things need your attention soon.';
 
     return '$status\n\n'
@@ -1696,8 +1713,9 @@ class AIService {
       double savingsRate = (monthlyIncome - thisMonthTotal) / monthlyIncome;
       healthScore += savingsRate * 30;
     }
-    if (totalDebt == 0) healthScore += 20;
-    else if (totalDebt < monthlyIncome * 3) healthScore += 10;
+    if (totalDebt == 0) {
+      healthScore += 20;
+    } else if (totalDebt < monthlyIncome * 3) healthScore += 10;
     if (totalSaved > monthlyIncome * 3) healthScore += 10;
     healthScore = healthScore.clamp(0, 100);
 
@@ -2025,7 +2043,7 @@ class AIService {
       alerts.add(SmartAlert(
         type: 'bill',
         title: '🚨 Overdue: ${bill.type} Bill',
-        body: '${_cur.format(bill.amount)} was due ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} ago.',
+        body: '${_cur.format(bill.amount)} was due $daysOverdue day${daysOverdue > 1 ? 's' : ''} ago.',
         priority: daysOverdue > 3 ? 'critical' : 'high',
       ));
     }
@@ -2061,7 +2079,7 @@ class AIService {
       alerts.add(SmartAlert(
         type: 'maintenance',
         title: '🔧 ${task.name} Overdue',
-        body: 'Was due ${daysOverdue} day${daysOverdue > 1 ? 's' : ''} ago. Schedule service soon.',
+        body: 'Was due $daysOverdue day${daysOverdue > 1 ? 's' : ''} ago. Schedule service soon.',
         priority: daysOverdue > 7 ? 'high' : 'medium',
       ));
     }

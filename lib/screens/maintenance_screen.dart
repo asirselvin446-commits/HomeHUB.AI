@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class MaintenanceScreen extends StatelessWidget {
@@ -49,12 +47,12 @@ class MaintenanceScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          AppColors.primary.withOpacity(0.15),
-                          AppColors.primary.withOpacity(0.1),
+                          AppColors.primary.withValues(alpha: 0.15),
+                          AppColors.primary.withValues(alpha: 0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,7 +104,7 @@ class MaintenanceScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: statusColor.withOpacity(0.3)),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,7 +114,7 @@ class MaintenanceScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
+                  color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -211,7 +209,7 @@ class MaintenanceScreen extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
+                color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -298,10 +296,9 @@ class MaintenanceScreen extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 40,
-                height: 4,
+                width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -325,20 +322,29 @@ class MaintenanceScreen extends StatelessWidget {
 
   void _showMaintenanceDialog(BuildContext context, {MaintenanceTask? task}) {
     final nameCtrl = TextEditingController(text: task?.name ?? '');
+    final customCatCtrl = TextEditingController();
     String category = task?.category ?? 'HVAC';
     final daysCtrl = TextEditingController(text: task?.recurringDays.toString() ?? '90');
+    DateTime? selectedDate = task?.nextDue;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final predefined = ['HVAC', 'Water', 'Electrical', 'Plumbing', 'General', 'Custom'];
+    bool isCustom = false;
+    if (task != null && !predefined.contains(task.category)) {
+      isCustom = true;
+      customCatCtrl.text = task.category;
+      category = 'Custom';
+    }
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? AppColors.darkSurface
-          : AppColors.lightSurface,
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => Padding(
+        builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsets.fromLTRB(
               20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
           child: Column(
@@ -347,10 +353,9 @@ class MaintenanceScreen extends StatelessWidget {
             children: [
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 40, height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -359,24 +364,111 @@ class MaintenanceScreen extends StatelessWidget {
               Text(task == null ? 'Add Maintenance Task' : 'Edit Maintenance Task',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
               SizedBox(height: 16),
+
+              // Task Name
               TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(hintText: 'Task name (e.g. AC Servicing)'),
               ),
               SizedBox(height: 12),
+
+              // Category Dropdown with Custom option
               DropdownButtonFormField<String>(
-                value: category,
+                initialValue: category,
                 decoration: InputDecoration(hintText: 'Category'),
-                items: ['HVAC', 'Water', 'Electrical', 'Plumbing', 'General']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                items: predefined
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Row(children: [
+                            Icon(
+                              c == 'Custom' ? Icons.edit_rounded : _getCategoryIcon(c),
+                              size: 16,
+                              color: c == 'Custom'
+                                  ? AppColors.primary
+                                  : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                            ),
+                            SizedBox(width: 8),
+                            Text(c),
+                          ]),
+                        ))
                     .toList(),
-                onChanged: (v) => setState(() => category = v!),
+                onChanged: (v) => setSheetState(() {
+                  category = v!;
+                  isCustom = v == 'Custom';
+                }),
               ),
+
+              // Custom category text field
+              if (isCustom) ...[
+                SizedBox(height: 12),
+                TextField(
+                  controller: customCatCtrl,
+                  decoration: InputDecoration(
+                    hintText: 'Enter custom category',
+                    prefixIcon: Icon(Icons.label_outline_rounded, size: 20),
+                  ),
+                ),
+              ],
+
               SizedBox(height: 12),
+
+              // Next Due Date Picker (dd/MM/yyyy)
+              GestureDetector(
+                onTap: () async {
+                  final picked = await showDatePicker(
+                    context: ctx,
+                    initialDate: selectedDate ?? DateTime.now().add(Duration(days: 30)),
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(Duration(days: 365 * 5)),
+                    helpText: 'Select next service date',
+                  );
+                  if (picked != null) {
+                    setSheetState(() => selectedDate = picked);
+                  }
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.darkCard : Color(0xFFF0F2F5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.calendar_today_rounded, size: 18,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      SizedBox(width: 10),
+                      Text(
+                        selectedDate != null
+                            ? DateFormat('dd / MM / yyyy').format(selectedDate!)
+                            : 'Next due date (dd/mm/yyyy)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: selectedDate != null
+                              ? (isDark ? AppColors.darkText : AppColors.lightText)
+                              : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                        ),
+                      ),
+                      Spacer(),
+                      Icon(Icons.arrow_drop_down_rounded,
+                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                    ],
+                  ),
+                ),
+              ),
+
+              SizedBox(height: 12),
+
+              // Recurring Interval
               TextField(
                 controller: daysCtrl,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(hintText: 'Recurring interval (days)'),
+                decoration: InputDecoration(
+                  hintText: 'Recurring interval (days)',
+                  prefixIcon: Icon(Icons.repeat_rounded, size: 20),
+                ),
               ),
               SizedBox(height: 20),
               SizedBox(
@@ -385,13 +477,16 @@ class MaintenanceScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     if (nameCtrl.text.isNotEmpty) {
+                      final finalCategory = isCustom
+                          ? (customCatCtrl.text.isNotEmpty ? customCatCtrl.text : 'General')
+                          : category;
+                      final days = int.tryParse(daysCtrl.text) ?? 90;
                       final newTask = MaintenanceTask(
                         id: task?.id ?? '',
                         name: nameCtrl.text,
-                        category: category,
-                        recurringDays: int.tryParse(daysCtrl.text) ?? 90,
-                        nextDue: task?.nextDue ?? DateTime.now().add(
-                            Duration(days: int.tryParse(daysCtrl.text) ?? 90)),
+                        category: finalCategory,
+                        recurringDays: days,
+                        nextDue: selectedDate ?? task?.nextDue ?? DateTime.now().add(Duration(days: days)),
                         lastServiced: task?.lastServiced,
                         history: task?.history ?? [],
                         description: task?.description ?? '',
@@ -407,10 +502,10 @@ class MaintenanceScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text(task == null ? 'Add Task' : 'Save Changes', style: TextStyle(fontWeight: FontWeight.w600)),
+                  child: Text(task == null ? 'Add Task' : 'Save Changes',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
               ),
             ],

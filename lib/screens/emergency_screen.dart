@@ -3,9 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/app_state.dart';
 import '../models/models.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 import '../widgets/common_widgets.dart';
 
 class EmergencyScreen extends StatelessWidget {
@@ -53,7 +51,7 @@ class EmergencyScreen extends StatelessWidget {
             margin: EdgeInsets.only(right: 16),
             padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.15),
+              color: AppColors.error.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -95,13 +93,13 @@ class EmergencyScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Color(0xFFFF6B6B).withOpacity(0.15),
-                        Color(0xFFFF4757).withOpacity(0.1),
+                        Color(0xFFFF6B6B).withValues(alpha: 0.15),
+                        Color(0xFFFF4757).withValues(alpha: 0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                        color: AppColors.error.withOpacity(0.3)),
+                        color: AppColors.error.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +142,7 @@ class EmergencyScreen extends StatelessWidget {
                                   Container(
                                     padding: EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: color.withOpacity(0.15),
+                                      color: color.withValues(alpha: 0.15),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Icon(
@@ -219,7 +217,7 @@ class EmergencyScreen extends StatelessWidget {
                                   width: 40,
                                   height: 40,
                                   decoration: BoxDecoration(
-                                    color: color.withOpacity(0.15),
+                                    color: color.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(icon, color: color, size: 20),
@@ -274,7 +272,7 @@ class EmergencyScreen extends StatelessWidget {
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: AppColors.primary
-                                              .withOpacity(0.15),
+                                              .withValues(alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -290,7 +288,7 @@ class EmergencyScreen extends StatelessWidget {
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary)
-                                              .withOpacity(0.15),
+                                              .withValues(alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -308,7 +306,7 @@ class EmergencyScreen extends StatelessWidget {
                                         padding: EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: AppColors.error
-                                              .withOpacity(0.15),
+                                              .withValues(alpha: 0.15),
                                           borderRadius:
                                               BorderRadius.circular(10),
                                         ),
@@ -352,7 +350,7 @@ class EmergencyScreen extends StatelessWidget {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Icon(
@@ -460,7 +458,7 @@ class EmergencyScreen extends StatelessWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -482,7 +480,7 @@ class EmergencyScreen extends StatelessWidget {
               ),
               SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: category,
+                initialValue: category,
                 decoration: InputDecoration(hintText: 'Category'),
                 items: [
                   'Hospital',

@@ -48,7 +48,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Color(0xFF7C3AED).withOpacity(0.3),
+                  color: Color(0xFF7C3AED).withValues(alpha: 0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -94,7 +94,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               return ChoiceChip(
                 label: Text(type),
                 selected: selected,
-                selectedColor: AppTheme.primaryDark.withOpacity(0.15),
+                selectedColor: AppTheme.primaryDark.withValues(alpha: 0.15),
                 labelStyle: TextStyle(
                   color: selected
                       ? AppTheme.primaryDark
@@ -212,7 +212,7 @@ class _FeedbackScreenState extends State<FeedbackScreen> {
               color: isDark ? AppTheme.darkCard : AppTheme.lightCard,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
               ),
             ),
             child: Row(

@@ -31,7 +31,7 @@ class StatTile extends StatelessWidget {
         border: Border.all(
           color: AppColors.isDark(context)
               ? AppColors.darkBorder
-              : Colors.black.withOpacity(0.04),
+              : Colors.black.withValues(alpha: 0.04),
         ),
       ),
       child: Column(
@@ -43,7 +43,7 @@ class StatTile extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Icon(icon, color: color, size: 18),

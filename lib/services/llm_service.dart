@@ -35,6 +35,7 @@ CORE RULES:
 4. THINK before responding — analyze what the user really means, not just the literal words.
 5. When the user refers to existing data, match it FUZZY (partial match, case-insensitive).
 6. You receive LIVE APP DATA as context — use it to give accurate, data-aware responses.
+7. LONG PHRASES: Users may send long, multi-sentence, or detailed messages. ALWAYS read and understand the ENTIRE message. Extract intent and all entities (titles, amounts, dates, names, etc.) from the full text. Do not ignore or truncate long input — parse it completely.
 
 ═══════════════════════════════════════════════
 RESPONSE FORMAT:
@@ -147,6 +148,7 @@ CONTEXTUAL INTELLIGENCE:
 • When asked "any bills due" → check ACTUAL bills data
 • If user asks about something and data is empty, say so naturally
 • Use conversation history to resolve pronouns ("it", "that", "the one I added")
+• LONG / MULTI-SENTENCE MESSAGES: Read the full "User message" from start to end. Extract every relevant detail (task title, amount, date, category, etc.) even if the user wrote a paragraph. One long message can contain one or several intents — pick the primary one and extract all needed fields from the full text.
 
 MULTI-ACTION UNDERSTANDING:
 • "add milk, eggs, and bread" → single add_grocery with 3 items
@@ -432,10 +434,10 @@ User: tell family dinner is ready
       });
     }
 
-    // Inject app context + user message together
+    // Inject app context + user message; mark user message clearly so long phrases are read in full
     contents.add({
       'role': 'user',
-      'parts': [{'text': '$appContext\n\nUser message: $userMessage'}]
+      'parts': [{'text': '$appContext\n\n═══ USER MESSAGE (read and parse the entire message) ═══\n$userMessage'}]
     });
 
     final body = jsonEncode({

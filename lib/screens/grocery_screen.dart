@@ -223,10 +223,10 @@ class _GroceryScreenState extends State<GroceryScreen> {
           borderRadius: BorderRadius.circular(AppSpacing.radiusLg),
           border: Border.all(
             color: item.isPurchased
-                ? AppColors.primary.withOpacity(0.3)
+                ? AppColors.primary.withValues(alpha: 0.3)
                 : isDark
                     ? AppColors.darkBorder
-                    : Colors.black.withOpacity(0.04),
+                    : Colors.black.withValues(alpha: 0.04),
           ),
         ),
         child: Row(
@@ -243,7 +243,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
                   border: Border.all(
                     color: item.isPurchased
                         ? AppColors.primary
-                        : AppColors.textSecondary(context).withOpacity(0.5),
+                        : AppColors.textSecondary(context).withValues(alpha: 0.5),
                     width: 2,
                   ),
                 ),
@@ -287,7 +287,7 @@ class _GroceryScreenState extends State<GroceryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -339,7 +339,7 @@ void showGroceryDialog(BuildContext context, {GroceryItem? item}) {
               child: Container(
                 width: 40, height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textSecondary(context).withOpacity(0.3),
+                  color: AppColors.textSecondary(context).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -371,7 +371,7 @@ void showGroceryDialog(BuildContext context, {GroceryItem? item}) {
                 const SizedBox(width: 12),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: unit,
+                    initialValue: unit,
                     decoration: const InputDecoration(hintText: 'Unit'),
                     items: ['pcs', 'kg', 'L', 'g', 'ml', 'dozen', 'pack']
                         .map((u) => DropdownMenuItem(value: u, child: Text(u)))

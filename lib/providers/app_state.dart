@@ -70,10 +70,11 @@ class AppState extends ChangeNotifier {
 
   // ============ PERMISSION HELPERS ============
   bool get isAdmin => _userProfile?['isAdmin'] == true;
-  bool get canEditFinance {
+  bool get canViewFinance {
     final role = familyRole;
     return isAdmin || role == 'Father' || role == 'Mother';
   }
+  bool get canEditFinance => canViewFinance;
   bool get canRemoveMembers => isAdmin;
   bool get isProfileComplete =>
       _userProfile != null &&
@@ -177,10 +178,14 @@ class AppState extends ChangeNotifier {
       await _loadHouseholdData();
       _subscribeToStreams();
     }
-    
+
+
+
     _isLoadingProfile = false;
     notifyListeners();
   }
+
+
 
   Future<void> _loadHouseholdData() async {
     if (_householdId == null) return;
@@ -338,32 +343,16 @@ class AppState extends ChangeNotifier {
 
     _subscriptions.add(
       _firebase.streamSavingsGoals(_householdId!).listen((data) {
-        // Check for savings milestones before updating
-        if (_notificationsEnabled && _savingsGoals.isNotEmpty) {
-          NotificationService.instance.checkSavingsMilestones(data, _savingsGoals).then((_) {
-            // Also log milestone notifications to in-app feed
-            for (final goal in data) {
-              final prev = _savingsGoals.where((p) => p.id == goal.id).firstOrNull;
-              if (prev != null) {
-                final milestones = [0.25, 0.50, 0.75, 1.0];
-                final labels = ['25%', '50%', '75%', '100%'];
-                for (int i = 0; i < milestones.length; i++) {
-                  if (prev.progressPercent < milestones[i] && goal.progressPercent >= milestones[i]) {
-                    _addNotificationToHistory(
-                      '🎉 ${goal.name} — ${labels[i]} Complete!',
-                      '₹${goal.currentAmount.toStringAsFixed(0)} of ₹${goal.targetAmount.toStringAsFixed(0)} saved',
-                      type: 'savings',
-                      actionRoute: 'finance',
-                    );
-                    break;
-                  }
-                }
-              }
-            }
+        final previous = _savingsGoals;
+        if (_notificationsEnabled) {
+          NotificationService.instance.checkSavingsMilestones(data, previous).then((_) {
+            _savingsGoals = data;
+            notifyListeners();
           });
+        } else {
+          _savingsGoals = data;
+          notifyListeners();
         }
-        _savingsGoals = data;
-        notifyListeners();
       }),
     );
 
@@ -405,6 +394,7 @@ class AppState extends ChangeNotifier {
   }
 
   void _cancelSubscriptions() {
+    NotificationService.instance.cancelAllScheduled();
     for (var sub in _subscriptions) {
       sub.cancel();
     }
@@ -555,7 +545,7 @@ class AppState extends ChangeNotifier {
     debugPrint('Smart scan: ${alerts.length} alerts generated');
 
     // Map alert type to notification route
-    String _routeForType(String type) {
+    String routeForType(String type) {
       switch (type) {
         case 'budget':
         case 'bill':
@@ -587,7 +577,7 @@ class AppState extends ChangeNotifier {
         alert.title,
         alert.body,
         type: 'ai_smart_${alert.type}',
-        actionRoute: _routeForType(alert.type),
+        actionRoute: routeForType(alert.type),
       );
     }
 
@@ -615,6 +605,7 @@ class AppState extends ChangeNotifier {
     _localStorage.setNotificationPref(category, value);
     notifyListeners();
   }
+
 
   // ============ AUTH ============
 
@@ -1202,7 +1193,7 @@ class AppState extends ChangeNotifier {
           amount: (action.data['amount'] ?? 0).toDouble(),
           category: action.data['category'] ?? 'Misc',
           date: DateTime.now(),
-          paidBy: currentUser,
+          paidBy: currentUserId,
         );
         await addExpense(expense);
         break;
@@ -1393,8 +1384,9 @@ class AppState extends ChangeNotifier {
           if (existing.id.isNotEmpty) {
             DateTime? newDue;
             final ds = action.data['new_due_date']?.toString().toLowerCase();
-            if (ds == 'today') newDue = DateTime.now();
-            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            if (ds == 'today') {
+              newDue = DateTime.now();
+            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
             else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
             else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
 
@@ -1490,8 +1482,9 @@ class AppState extends ChangeNotifier {
                 : existing.amount;
             DateTime? newDue;
             final ds = action.data['new_due_date']?.toString().toLowerCase();
-            if (ds == 'today') newDue = DateTime.now();
-            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            if (ds == 'today') {
+              newDue = DateTime.now();
+            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
             else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
             else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
 
@@ -1569,8 +1562,9 @@ class AppState extends ChangeNotifier {
           if (existing.id.isNotEmpty) {
             DateTime? newDue;
             final ds = action.data['new_due_date']?.toString().toLowerCase();
-            if (ds == 'today') newDue = DateTime.now();
-            else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
+            if (ds == 'today') {
+              newDue = DateTime.now();
+            } else if (ds == 'tomorrow') newDue = DateTime.now().add(const Duration(days: 1));
             else if (ds == 'next week') newDue = DateTime.now().add(const Duration(days: 7));
             else if (ds == 'next month') newDue = DateTime.now().add(const Duration(days: 30));
 

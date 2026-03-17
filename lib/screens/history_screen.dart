@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_state.dart';
-import '../theme/app_theme.dart';
 import '../theme/colors.dart';
-import '../theme/spacing.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -294,7 +292,7 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
       color: isDark ? AppColors.darkCard : AppColors.lightCard,
       borderRadius: BorderRadius.circular(14),
       border: Border.all(
-        color: entry.color.withOpacity(0.15),
+        color: entry.color.withValues(alpha: 0.15),
       ),
     ),
     child: Row(
@@ -303,7 +301,7 @@ Widget _historyTile(_HistoryEntry entry, bool isDark) {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: entry.color.withOpacity(0.12),
+            color: entry.color.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(entry.icon, color: entry.color, size: 20),
